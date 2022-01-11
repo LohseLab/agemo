@@ -218,21 +218,21 @@ class Test_Simple_Models:
 		expected_new_state_list = [(('aa'),('b', 'b')), (('a', 'a'),('bb')), ((),('a', 'a', 'b', 'b'))]
 		assert np.all(np.array_equal(x,np.array([1,1,1,2,2,0,0],dtype=np.uint8)) for x in multiplier_array[:,1])
 
-@pytest.mark.matrix_chain_rule
+@pytest.mark.from_matrix
 class Test_Paths:
 
 	def test_paths_pre_laplace(self, return_gf):
-		variables_array, (paths_mat, eq_mat), (paths_chain, eq_chain) = return_gf	
-		self.paths_pre_laplace(paths_mat, paths_chain)
-		self.equations_pre_laplace(eq_mat, eq_chain, variables_array)
+		variables_array, (paths_mat, eq_mat), gf_original = return_gf	
+		self.equations_pre_laplace(eq_mat, paths_mat, variables_array, gf_original)
 
-	def paths_pre_laplace(self, paths_mat, paths_chain):
-		assert all(np.array_equal(path_mat, path_chain) for path_mat, path_chain in zip(paths_mat, paths_chain))
-
-	def equations_pre_laplace(self, eq_mat, eq_chain, variables_array):
-		eq_from_matrix = gflib.equations_from_matrix(eq_mat, variables_array)
-		assert eq_from_matrix.size>0
-		assert all(eq_1==eq_2 for eq_1, eq_2 in zip(eq_from_matrix, eq_chain))
+	def equations_pre_laplace(self, eq_mat, paths, variables_array, gf_original):
+		print(paths)
+		print(eq_mat.shape)
+		eqs = np.zeros(len(paths), dtype=object)
+		for i, path in enumerate(paths):
+			ma = eq_mat[np.array(path, dtype=int)]
+			eqs[i] = np.prod(gflib.equations_from_matrix(ma, variables_array))
+		gf_from_paths = sum(eqs)
 
 	@pytest.fixture(
 		scope='class', 
@@ -268,7 +268,7 @@ class Test_Paths:
 			variables_array.append(exodus_rate)
 		variables_array += [sage.all.SR.var(m) for m in mutype_labels]
 		variables_array = np.array(variables_array, dtype=object)
-
+		
 		gfobj = gflib.GFMatrixObject(
 			sample_list, 
 			coalescence_rate_idxs, 
@@ -280,7 +280,7 @@ class Test_Paths:
 			)
 		gf_mat = list(gfobj.make_gf())
 		
-		gfobj2 = gflib.GFObjectChainRule(
+		gfobj2 = gflib.GFObject(
 			sample_list, 
 			coalescence_rates, 
 			branchtype_dict_chain,
@@ -289,6 +289,6 @@ class Test_Paths:
 			migration_rate=migration_rate,
 			migration_direction=migration_direction
 			)
-		gf_chain = gfobj2.make_gf()
+		gf_original = sum(gfobj2.make_gf())
 
-		return (variables_array, gf_mat, gf_chain)
+		return (variables_array, gf_mat, gf_original)

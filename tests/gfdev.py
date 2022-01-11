@@ -1,6 +1,9 @@
+import numpy as np
 import sage.all
 
 import gf.gflib as gflib
+import gf.inverse as gfinverse
+import gf.legacy.inverse as linverse
 
 def get_parameter_dict(coalescence_rates, global_info, sim_config, gf_vars):
 	parameter_dict = {}
@@ -23,3 +26,27 @@ def get_theta(global_info, sim_config, **kwargs):
 	mu=global_info['mu']
 	block_length = global_info['blocklength']
 	return 2*sage.all.Rational(Ne_ref*mu)*block_length
+
+def equations_from_matrix_with_inverse(multiplier_array, paths, var_array, time, delta_idx):
+	split_paths = gflib.split_paths_laplace(paths, multiplier_array, delta_idx)
+	delta_in_nom_all = multiplier_array[:, 0, delta_idx]==1
+	results = np.zeros(len(split_paths), dtype=object)
+	subset_no_delta = np.arange(multiplier_array.shape[-1])!=delta_idx
+	multiplier_array_no_delta = multiplier_array[:,:,subset_no_delta] 
+	for idx, (no_delta, with_delta) in enumerate(split_paths):
+		delta_in_nom_list = delta_in_nom_all[with_delta]
+		inverse = gfinverse.inverse_laplace_single_event(multiplier_array_no_delta[with_delta], var_array, time, delta_in_nom_list)
+		if isinstance(inverse, np.ndarray):
+			inverse = np.sum(inverse)
+		no_inverse = np.prod(gflib.equations_from_matrix(multiplier_array_no_delta[no_delta], var_array))
+		results[idx] = np.prod((inverse, no_inverse))
+	return results
+
+def equations_with_sage(multiplier_array, paths, var_array, time, delta_idx):
+	delta = var_array[delta_idx] if delta_idx is not None else None
+	eqs = np.zeros(len(paths), dtype=object)
+	for i, path in enumerate(paths):
+		ma = multiplier_array[np.array(path, dtype=int)]
+		temp = np.prod(gflib.equations_from_matrix(ma, var_array))
+		eqs[i] = linverse.return_inverse_laplace(temp, delta).subs({sage.all.SR.var('T'):time})
+	return eqs

@@ -6,7 +6,6 @@ import tests.gfdev as gfdev
 import gf.gflib as gflib
 import gf.mutations as mut
 import gf.legacy.mutations as smut
-#import gf.evaluate as gfeval
 import gf.legacy.evaluate as leval
 
 all_configs = {
