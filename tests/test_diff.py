@@ -2,6 +2,8 @@ import itertools
 import numpy as np
 import pytest
 import sage.all
+import scipy.stats as stats
+
 from scipy.special import factorial
 
 import gf.gflib as gflib
@@ -38,10 +40,10 @@ class Test_taylor_series_coefficients:
 
 	def test_prod_of_polynomials(self):
 		eq_matrix = np.array([
-    		[[1,0,0,0],[1,1,1,1]],
-    		[[0,1,0,0],[1,1,1,1]],
-    		[[1,0,0,0],[1,0,1,0]]],
-    		dtype=np.int8)
+			[[1,0,0,0],[1,1,1,1]],
+			[[0,1,0,0],[1,1,1,1]],
+			[[1,0,0,0],[1,0,1,0]]],
+			dtype=np.int8)
 		shape = (2,2)
 		var_array = np.array([0.1,0.2,0.3,0.3], dtype=np.float64)
 		symbolic_var_array = np.array(
@@ -59,15 +61,15 @@ class Test_taylor_series_coefficients:
 
 	@pytest.mark.parametrize("eq_matrix, delta_in_nom",
 		[(np.array([
-    		[[1,0,0,0],[1,1,1,1]],
-    		[[0,1,0,0],[2,1,0,2]],
-    		[[1,0,0,0],[1,1,1,0]]],
-    		dtype=np.int8), True),
+			[[1,0,0,0],[1,1,1,1]],
+			[[0,1,0,0],[2,1,0,2]],
+			[[1,0,0,0],[1,1,1,0]]],
+			dtype=np.int8), True),
 		(np.array([
-    		[[1,0,0,0],[1,1,1,1]],
-    		[[1,0,0,0],[2,1,0,2]],
-    		[[1,0,0,0],[1,1,1,0]]],
-    		dtype=np.int8), False)])
+			[[1,0,0,0],[1,1,1,1]],
+			[[1,0,0,0],[2,1,0,2]],
+			[[1,0,0,0],[1,1,1,0]]],
+			dtype=np.int8), False)])
 	def test_diff_inverse_laplace(self, eq_matrix, delta_in_nom):
 		dummy_variable_idx = 1
 		dummy_variable = sage.all.SR.var('E')
@@ -92,15 +94,15 @@ class Test_taylor_series_coefficients:
 
 	@pytest.mark.parametrize("eq_matrix, delta_in_denom, delta_in_nom",
 		[(np.array([
-    	[[1,0,0,0],[1,0,1,1]],
-    	[[0,1,0,0],[2,1,0,2]],
-    	[[1,0,0,0],[1,0,1,0]]],
-    	dtype=np.int8), np.array([False, True, False], dtype=bool), True),
-    	(np.array([
-    		[[1,0,0,0],[1,0,1,1]],
-    		[[1,0,0,0],[2,1,0,2]],
-    		[[1,0,0,0],[1,0,1,0]]],
-    		dtype=np.int8), np.array([False, True, False], dtype=bool), False)
+		[[1,0,0,0],[1,0,1,1]],
+		[[0,1,0,0],[2,1,0,2]],
+		[[1,0,0,0],[1,0,1,0]]],
+		dtype=np.int8), np.array([False, True, False], dtype=bool), True),
+		(np.array([
+			[[1,0,0,0],[1,0,1,1]],
+			[[1,0,0,0],[2,1,0,2]],
+			[[1,0,0,0],[1,0,1,0]]],
+			dtype=np.int8), np.array([False, True, False], dtype=bool), False)
 		])
 	def test_diff_inverse_laplace2(self, eq_matrix, delta_in_denom, delta_in_nom):
 		#eq in which some factors have dummy variable, others don't
@@ -220,9 +222,9 @@ class Test_taylor2:
 		ordered_mutype_list = [sage.all.SR.var(f'm_{idx}') for idx in range(1,size)]
 		num_mutypes = len(ordered_mutype_list)
 		alt_variable_array = np.hstack((variable_array[:2], np.array(ordered_mutype_list)))
-		result_with_marginals = self.evaluate_graph_marginals(gfobj, max_k, theta, variable_array, time)
+		result_with_marginals = evaluate_graph_marginals(gfobj, max_k, theta, variable_array, time, False)
 		print(result_with_marginals)
-		exp_result = self.evaluate_symbolic_equation(gfobj, ordered_mutype_list, max_k, theta, alt_variable_array, time)
+		exp_result = evaluate_symbolic_equation(gfobj, ordered_mutype_list, max_k, theta, alt_variable_array, time)
 		assert np.allclose(exp_result, result_with_marginals)
 
 	def test_IM_models(self, get_IM_gfobject):
@@ -244,9 +246,7 @@ class Test_taylor2:
 		#else:
 		#	var_symbolic = np.hstack((variable_array, ordered_mutype_list))
 			
-		result_with_marginals = self.evaluate_graph_marginals(gfobj, max_k, theta, var, time)
-		if adjust_marginals:
-			result_with_marginals = gfmuts.adjust_marginals_array(result_with_marginals, len(max_k))
+		result_with_marginals = evaluate_graph_marginals(gfobj, max_k, theta, var, time, adjust_marginals)
 		self.compare_ETPs_model(model, result_with_marginals)
 		
 	def get_gf_no_mutations(self, size):
@@ -266,21 +266,9 @@ class Test_taylor2:
 			)
 		return gfobj
 
-	def evaluate_graph_marginals(self, gfobj, k_max, theta, var, time):
-		gfEvalObj = gfeval.gfEvaluator(gfobj, k_max)
-		return gfEvalObj.evaluate(theta, var, time)
-
-	def evaluate_symbolic_equation(self, gfobj, ordered_mutype_list, max_k, theta, var, time, sage_inverse=False):
-		theta = sage.all.Rational(theta)
-		rate_dict = {b:theta for b in ordered_mutype_list}
-		paths, eq_matrix = gfobj.make_gf()
-		if not sage_inverse:
-			alt_eqs = gfdev.equations_from_matrix_with_inverse(eq_matrix, paths, var, time, gfobj.exodus_rate)
-		else:
-			alt_eqs = gfdev.equations_with_sage(eq_matrix, paths, var, sage.all.Rational(time), gfobj.exodus_rate)
-		gf_alt = sum(alt_eqs)
-		result = smuts.depth_first_mutypes(max_k, ordered_mutype_list, gf_alt, theta, rate_dict)
-		return result.astype(np.float64)
+	#def evaluate_graph_marginals(self, gfobj, k_max, theta, var, time):
+	#	gfEvalObj = gfeval.gfEvaluator(gfobj, k_max)
+	#	return gfEvalObj.evaluate(theta, var, time)
 
 	def compare_ETPs_model(self, model, ETPs):
 		precalc_ETPs = np.squeeze(np.load(f'tests/ETPs/{model}.npy'))
@@ -307,6 +295,53 @@ class Test_taylor2:
 		],
 	)
 	def get_IM_gfobject(self, request):
+		return get_IM_gfobject(request.param)
+
+
+@pytest.mark.epsilon
+class Test_epsilon:
+	def test_IM_epsilon(self):
+		params = ([(1,2,0)], sage.all.SR.var('E'), [(2,1)], sage.all.SR.var('M'), [0.5, np.array([1.0, .2, .3, .4], dtype=np.float64), 1.5], 'IM_BA_zerodivision', True)
+		gfobj, parameter_combo, model, adjust_marginals = get_IM_gfobject(params)
+		num_variables = gfobj.num_variables if gfobj.exodus_rate is None else gfobj.num_variables-1
+		max_k = np.array([2,2,2,2], dtype=int)
+		ordered_mutype_list = [sage.all.SR.var(f'm_{idx}') for idx in range(1,len(max_k)+1)]
+		shape = tuple(max_k+1)
+		#variables depending on model: c0, c1, c2, M, E
+		theta, variable_array, time = parameter_combo
+		#factor = 1e-5
+		#epsilon = 1. + np.random.randint(low=-100, high=100, size=len(variable_array)) * factor
+		#variable_array*=epsilon
+		#print(variable_array)
+		theta_array = np.full(len(max_k), fill_value=theta)
+		var = np.hstack((variable_array, theta_array))
+		
+		result_with_marginals = evaluate_graph_marginals(gfobj, max_k, theta, var, time, adjust_marginals)
+		sim_counts = np.load('tests/ETPs/IM_BA_epsilon_sim.npy')
+		result_with_marginals[result_with_marginals<0] = 0
+		expected_counts = result_with_marginals * np.sum(sim_counts)
+		chisquare(sim_counts, expected_counts)
+
+def evaluate_graph_marginals(gfobj, k_max, theta, var, time, adjust_marginals):
+	gfEvalObj = gfeval.gfEvaluator(gfobj, k_max)
+	if adjust_marginals:
+		return gfEvalObj.evaluate(theta, var, time)
+	else:
+		return evaluate_no_marginal(gfEvalObj, theta, var, time)
+
+def evaluate_symbolic_equation(gfobj, ordered_mutype_list, max_k, theta, var, time, sage_inverse=False):
+	theta = sage.all.Rational(theta)
+	rate_dict = {b:theta for b in ordered_mutype_list}
+	paths, eq_matrix = gfobj.make_gf()
+	if not sage_inverse:
+		alt_eqs = gfdev.equations_from_matrix_with_inverse(eq_matrix, paths, var, time, gfobj.exodus_rate)
+	else:
+		alt_eqs = gfdev.equations_with_sage(eq_matrix, paths, var, sage.all.Rational(time), gfobj.exodus_rate)
+	gf_alt = sum(alt_eqs)
+	result = smuts.depth_first_mutypes(max_k, ordered_mutype_list, gf_alt, theta, rate_dict)
+	return result.astype(np.float64)		
+
+def get_IM_gfobject(params):
 		sample_list = [(),('a','a'),('b','b')]
 		ancestral_pop = 0
 		coalescence_rates = (sage.all.SR.var('c0'), sage.all.SR.var('c1'), sage.all.SR.var('c2'))
@@ -314,7 +349,7 @@ class Test_taylor2:
 		k_max = {'m_1':2, 'm_2':2, 'm_3':2, 'm_4':2}
 		mutype_labels, max_k = zip(*sorted(k_max.items()))
 		branchtype_dict_mat = gfmuts.make_branchtype_dict_idxs(sample_list, mapping='unrooted', labels=mutype_labels)
-		exodus_direction, exodus_rate, migration_direction, migration_rate, variable_array, model, adjust_marginals = request.param
+		exodus_direction, exodus_rate, migration_direction, migration_rate, variable_array, model, adjust_marginals = params
 		
 		variables_array = list(coalescence_rates)
 		migration_rate_idx, exodus_rate_idx = None, None
@@ -338,3 +373,32 @@ class Test_taylor2:
 			)
 
 		return gfobj, variable_array, model, adjust_marginals
+
+def chisquare(observed, expected, p_th=0.05, recombination=False, all_sims=False):
+	#expected counts need to be larger than 5 for chisquare
+	#combining bins with less than 5 counts into one bin.
+	obs = np.reshape(observed, -1)
+	exp = np.reshape(expected, -1)
+	if not (recombination or all_sims):
+		assert np.all(obs[exp == 0] == 0), "chisquare error: at least one cell with expected frequency 0 has observed values"
+	#bin all values with counts smaller than 5
+	binning_idxs = np.digitize(exp, np.array([5]), right=True)
+	exp_smaller = np.sum(exp[binning_idxs==0])
+	obs_smaller = np.sum(obs[binning_idxs==0])
+	exp_binned = exp[binning_idxs==1]
+	obs_binned = obs[binning_idxs==1]
+	not_zeros = exp_binned > 0
+	if sum(not_zeros)<1:
+		assert False #expected probabilities are all 0
+	else:
+		chisq = stats.chisquare(obs_binned[not_zeros], exp_binned[not_zeros])
+		print("chisquare value:", chisq)
+		print("exp", exp_binned)
+		print("obs", obs_binned)
+		assert chisq.pvalue > p_th
+
+def evaluate_no_marginal(gfEvaluatorObj, theta, var, time):
+	results = gfEvaluatorObj.evaluator(var, time)
+	final_result = gfdiff.iterate_eq_graph(gfEvaluatorObj.dependency_sequence, gfEvaluatorObj.eq_graph_array, results, gfEvaluatorObj.subsetdict)
+	theta_multiplier_matrix = gfdiff.taylor_to_probability(gfEvaluatorObj.multiplier_matrix, theta)
+	return theta_multiplier_matrix * final_result

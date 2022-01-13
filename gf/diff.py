@@ -92,8 +92,8 @@ def series_product(arr1, arr2, subsetdict):
 	ravel_arr2 = np.ravel(arr2)
 	for k in np.ndindex(shape):
 		new_idxs = subsetdict[k]
-		result[k] = np.sum(ravel_arr1[new_idxs]*(ravel_arr2[new_idxs][::-1]))
-		#result[k] = casc_sum(ravel_arr1[new_idxs]*(ravel_arr2[new_idxs][::-1]))
+		#result[k] = np.sum(ravel_arr1[new_idxs]*(ravel_arr2[new_idxs][::-1]))
+		result[k] = casc_sum(ravel_arr1[new_idxs]*(ravel_arr2[new_idxs][::-1]))
 	return result
 
 @numba.njit
