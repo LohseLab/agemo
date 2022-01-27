@@ -50,3 +50,7 @@ def equations_with_sage(multiplier_array, paths, var_array, time, delta_idx):
 		temp = np.prod(gflib.equations_from_matrix(ma, var_array))
 		eqs[i] = linverse.return_inverse_laplace(temp, delta).subs({sage.all.SR.var('T'):time})
 	return eqs
+
+def make_branchtype_dict_idxs_gimble():
+	return {'a': 1, 'abb': 1, 'b': 0, 'aab': 0, 'ab': 2, 'aa': 3, 'bb': 3}
+

@@ -158,6 +158,8 @@ def return_smaller_than_idx_marg(start, max_value, shape):
 		check = increment_marginal(start, len(shape)-1, max_value, reset_value)
 
 def product_subsetdict_marg(shape):
+#def product_subsetdict_marg(shape, all_idxs)
+#small modification: only make subsetdict for provided all_idxs.
 	result = numba.typed.Dict()
 	for idx in np.ndindex(shape):
 		reset_value = np.zeros(len(shape), dtype=np.int64)
