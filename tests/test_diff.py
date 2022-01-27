@@ -348,7 +348,8 @@ def get_IM_gfobject(params):
 		coalescence_rate_idxs = (0, 1, 2)
 		k_max = {'m_1':2, 'm_2':2, 'm_3':2, 'm_4':2}
 		mutype_labels, max_k = zip(*sorted(k_max.items()))
-		branchtype_dict_mat = gfmuts.make_branchtype_dict_idxs(sample_list, mapping='unrooted', labels=mutype_labels)
+		#branchtype_dict_mat = gfmuts.make_branchtype_dict_idxs(sample_list, mapping='unrooted', labels=mutype_labels)
+		branchtype_dict_mat = gfdev.make_branchtype_dict_idxs_gimble()
 		exodus_direction, exodus_rate, migration_direction, migration_rate, variable_array, model, adjust_marginals = params
 		
 		variables_array = list(coalescence_rates)

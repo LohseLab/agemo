@@ -1,7 +1,9 @@
 import itertools
 import collections
 import copy
+import math
 import numpy as np
+import numba
 
 import gf.gflib as gflib
 
@@ -106,31 +108,168 @@ def powerset(iterable):
 	s=list(iterable)
 	return (''.join(sorted(subelement)) for subelement in (itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))))
 
-def make_branchtype_dict_idxs(sample_list, mapping='unrooted', labels=None, starting_index=0):
-	all_branchtypes=list(gflib.flatten(sample_list))
-	branches = [branchtype for branchtype in gflib.powerset(all_branchtypes) if len(branchtype)>0 and len(branchtype)<len(all_branchtypes)]	
-	if mapping.startswith('label'):
-		if labels:
-			assert len(branches)==len(labels), "number of labels does not match number of branchtypes"
-			branchtype_dict = {branchtype: idx + starting_index for idx, branchtype in enumerate(branches)}
-		else:
-			branchtype_dict = {branchtype: idx + starting_index for idx, branchtype in enumerate(branches)}
-	elif mapping=='unrooted': #this needs to be extended to the general thing!
-		if not labels:
-			labels = ['m_1', 'm_2', 'm_3', 'm_4']
-		assert set(all_branchtypes)=={'a', 'b'}
-		branchtype_dict=dict()
-		for branchtype in gflib.powerset(all_branchtypes):
-			if len(branchtype)==0 or len(branchtype)==len(all_branchtypes):
-				pass
-			elif branchtype in ('abb', 'a'):
-				branchtype_dict[branchtype] = 1 + starting_index #hetA
-			elif branchtype in ('aab', 'b'):
-				branchtype_dict[branchtype] = 0 + starting_index #hetB
-			elif branchtype == 'ab':
-				branchtype_dict[branchtype] = 2 + starting_index #hetAB
-			else:
-				branchtype_dict[branchtype] = 3 + starting_index #fixed difference
+def make_branchtype_dict_idxs(sample_list, phased=False, rooted=False, starting_index=0):
+	samples = sorted(gflib.flatten(pop for pop in sample_list if len(pop)>0))
+	if phased:
+		all_branchtypes = list(flatten([[''.join(p) for p in itertools.combinations(samples, i)] for i in range(1,len(samples))]))
 	else:
-		ValueError("This branchtype mapping has not been implemented yet.")
+		all_branchtypes = list(flatten([sorted(set([''.join(p) for p in itertools.combinations(samples, i)])) for i in range(1,len(samples))]))
+
+	fold = math.ceil(len(all_branchtypes)/2)
+	correction_idx = len(all_branchtypes) - 1 if rooted else 0
+	branchtype_dict = dict()
+	for idx in range(fold):
+		branchtype_dict[all_branchtypes[idx]] = idx + starting_index
+		branchtype_dict[all_branchtypes[-idx-1]] = abs(- correction_idx + idx) + starting_index
+	
 	return branchtype_dict
+
+######## initial outline general branchtype implementation ################
+def get_binary_branchtype_array(dim):
+	all_nums = [[p for p in itertools.combinations(range(dim), i)] for i in range(1,dim)]
+	t = list(flatten(all_nums))
+	x = np.zeros((len(t), dim), dtype=np.uint8)
+	for idx, subt in enumerate(t):
+		x[idx, subt] = 1
+	return x
+
+def permuatation_repr_binary_branchtype_array(b, slices=None):
+	if slices==None:
+		length_slices = b.shape[-1:]
+	else:
+		length_slices = slices + b.shape[-1:]
+	num_permutations = np.prod([math.factorial(i) for i in length_slices])
+	shape = (b.shape[0], num_permutations)
+	result = np.zeros(shape, dtype = np.uint64)
+	for idx, subb in enumerate(b):
+		for idx2, numeric_rep in enumerate(single_branchtype_equivalences(subb, slices)):
+			result[idx, idx2] = numeric_rep
+	return result
+
+def mutype_equivalences(mutype, permutation_array):
+	idx = np.array(mutype)
+	return np.sort(permutation_array[idx==1].T, axis=-1)
+
+def single_branchtype_equivalences(b, slices=None):
+	if slices==None:
+		slices = np.array([])
+	b_pop = np.split(b, slices)
+	for p in all_permutations(*b_pop):
+		yield branchtype_to_single_number(p)
+
+@numba.vectorize([numba.uint8(numba.uint8, numba.uint8)])
+def packbits(x, y):
+	return 2*x + y
+
+def branchtype_to_single_number(b):
+	return packbits.reduce(b)
+
+def all_permutations(*b):
+	for r in itertools.product(*[single_permutation(m) for m in b]):
+		yield np.hstack(tuple(r))
+
+def single_permutation(b):
+	dim = b.size
+	for ordering in itertools.permutations(range(dim)):
+		yield b[np.array(ordering)]
+
+def flatten(input_list):
+	#exists somewhere else
+	return itertools.chain.from_iterable(input_list)
+
+def stacked_branchtype_representation(idx, binary_btype_array):
+	idx = np.array(idx)
+	return binary_btype_array[idx==1]
+
+def ravel_multi_index(multi_index, shape):
+	#exists somewhere else
+	shape_prod = np.cumprod(shape[:0:-1])[::-1]
+	return np.sum(shape_prod * multi_index[:-1]) + multi_index[-1]
+
+"""
+way to use it:
+samples = ['a','b','c', 'd']
+num_mutypes = 14
+mutype_array = -np.ones((2,)*num_mutypes, dtype=np.int64)
+repr_dict = {}
+bt_array = get_binary_branchtype_array(len(samples))
+compatibility_check = branchtype_compatibility(bt_array)
+permutation_array = permuatation_repr_binary_branchtype_array(bt_array)
+for mutype in compatibility_depth_first(compatibility_check, num_mutypes):
+	eqvs = mutype_equivalences(mutype, permutation_array)
+	first = tuple(eqvs[0])
+	if first in repr_dict.keys():
+		representative = repr_dict[first]
+		mutype_array[mutype] = representative
+	else:
+		for numeric_rep in eqvs:
+			mutype_array[mutype] = 0
+			repr_dict[tuple(numeric_rep)] = ravel_multi_index(mutype, mutype_array.shape)
+
+"""
+
+#determining binary_branchtype_array for unphased data
+
+def recursive_distribute(a, idx, to_distribute, boundary):
+	if to_distribute==0:
+		yield tuple(a)
+	else:
+		if idx<len(a):
+			distribute_now = min(to_distribute, boundary[idx])
+			for i in range(distribute_now,-1,-1):
+				new_a = a[:]
+				new_a[idx] = i
+				yield from recursive_distribute(new_a, idx+1, to_distribute-i, boundary)
+
+def generate_idxs(boundary):
+	total_boundary = sum(boundary)
+	a = [0]*len(boundary)
+	for i in range(1,total_boundary):
+		yield from recursive_distribute(a, 0, i, boundary)
+
+#from idxs to binary branchtype array
+def get_binary_branchtype_array_unphased(boundary):
+	result = []
+	for config in generate_idxs(boundary):
+		temp = []
+		for idx, pop in enumerate(config):
+			temp+=[1]*pop+[0]*(boundary[idx]-pop)
+		result.append(tuple(temp))
+	return np.array(result, dtype=np.uint8)
+
+#testing branchtype compatibility
+def branchtype_compatibility(b):
+	#returns all incompatible branchtypes for a given array of branchtypes b
+	num_rows = b.shape[0]
+	incompatible = [set() for _ in range(num_rows)]
+	for idx1, idx2 in itertools.combinations(range(num_rows), 2):
+		if not intersection_check(b[idx1], b[idx2]):
+			incompatible[idx1].add(idx2)
+			incompatible[idx2].add(idx1)
+	return incompatible
+
+def intersection_check(a, b):
+	s1 = set(np.argwhere(a).reshape(-1))
+	s2 = set(np.argwhere(b).reshape(-1))
+	min_len = min(len(s1), len(s2))
+	len_intersection = len(s1.intersection(s2))
+	return len_intersection == min_len or len_intersection==0
+
+def compatibility_depth_first(compatibility_check, size):
+	root = ((0,)*size, compatibility_check[0], size-1)
+	stack = [root]
+	possible = []
+	while stack:
+		mutype, incompatibility_set, idx = stack.pop()
+		if idx>-1:
+			new_mutype = list(mutype)
+			new_mutype[idx] = 1
+			new_mutype = tuple(new_mutype)
+			stack.append((mutype, incompatibility_set, idx-1))
+			if idx not in incompatibility_set:
+				new_incompatibility_set = incompatibility_set.union(compatibility_check[idx])
+				stack.append((new_mutype, new_incompatibility_set, idx-1))
+		else:
+			possible.append(mutype)
+			
+	return possible
