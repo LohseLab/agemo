@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+
+from itertools import chain, combinations
+import numpy as np
+from math import factorial
+import warnings
+from functools import reduce
+
+
+def transform_bin_arr_to_dec(bin_mat: np.ndarray) -> list:
+    """
+    Returns a set with the decimals representing the bit arrays (rows) of a binary matrix.
+    """
+    if bin_mat.shape[1] == 0:
+        return list()
+    else:
+        return [reduce(bin_reduction_operator, bit_arr) for bit_arr in bin_mat]
+
+
+def bin_reduction_operator(a: int, b: int) -> int:
+    return 2 * a + b
+
+
+def give_unranked_top_total(n):
+    """
+    Returns the total number of unranked topologies for all tree shapes of sample size n.
+    """
+    if n == 1:
+        return 1
+    else:
+        return round(factorial(2 * n - 3) / (2 ** (n - 2) * factorial(n - 2)))
+
+
+def give_unranked_top_tree_shape(n, n_s):
+    """
+    Returns the number of unranked topologies for a single tree shape of sample size n with n_s symmetric nodes.
+    """
+    return round(factorial(n) / (2 ** n_s))
+
+
+def give_ranked_top_total(n):
+    """
+    Returns the number of ranked topologies for a single tree shape of sample size n with n_s symmetric nodes.
+    In a ranked topology (= labeled history), we take care of the order in time of interior nodes.
+    """
+    return round(factorial(n) * factorial(n - 1) / (2 ** (n - 1)))
+
+
+class Node:
+    """ Class for a node with a left and a right child and depth-first traversal methods. """
+
+    def __init__(self, data):
+        """ Typically, data is the number of leaves below a node. """
+        self.left = None
+        self.right = None
+        self.data = data
+
+    def print_tree(self):
+        """ Prints the tree inorder. """
+        if self.left:
+            self.left.print_tree()
+        print(self.data)
+        if self.right:
+            self.right.print_tree()
+
+    def inorder_traversal(self, root):
+        # Depth-first inorder: Left subtree --> root --> right subtree.
+        res = list()
+        if root:
+            res = self.inorder_traversal(root.left)
+            res.append(root.data)
+            res = res + self.inorder_traversal(root.right)
+        return res
+
+    def preorder_traversal(self, root):
+        # Depth-first preorder: Root --> left subtree --> right subtree.
+        res = list()
+        if root:
+            res.append(root.data)
+            res = res + self.preorder_traversal(root.left)
+            res = res + self.preorder_traversal(root.right)
+        return res
+
+    def postorder_traversal(self, root):
+        # Depth-first postorder: Left subtree --> right subtree --> root
+        res = list()
+        if root:
+            res = self.postorder_traversal(root.left)
+            res = res + self.postorder_traversal(root.right)
+            res.append(root.data)
+        return res
+
+
+class TreeShape:
+    """ Class which collects all information for a single tree shape. """
+
+    def __init__(self, n, newick, n_s, entry_node, n_unranked):
+        self.n = n
+        self.newick = newick
+        self.n_s = n_s
+        self.entry_node = entry_node
+        self.n_unranked = n_unranked
+        self.binary_rep = None
+        self.decimal_rep = None  # this is the decimal_row_rep (set)
+        self.decimal_col_rep = None  # this is the col-wise equivalent (list to maintain order)
+        """ Both together are a unique specification of the binary-matrix:
+                - if both are represented unordered (lists), i.e., we keep original order: for an unranked topology 
+                - if both are represented ordered (sets): for a tree shape (equivalence class)
+                - if you allow exclusive (non-subsets) pairs to be reordered: for a ranked topology
+                """
+
+    def construct_representative(self) -> tuple:
+        """
+        Returns a uniquely-defined representative, both in binary (as bin-arrays) and decimal format, for a tree shape.
+        Principally, this can be done faster than recalculating this every time: The binary matrix will contain two
+        block matrices directly inherited from its constituents (top left, and bottom right). At the bottom we then
+        still have to "capitate" the genealogy, and append two rows, respectively one supporting the first constituent
+        and the latter supporting the second constituent. Here, one just needs to ensure that the representative is
+        defined.
+        Furthermore, one can also remove the identity (leaves) on top, provided a well-defined representative is kept.
+        """
+        if self.binary_rep is None or self.decimal_rep is None or self.decimal_col_rep is None:
+            postorder = self.entry_node.postorder_traversal(self.entry_node)
+            if not (self.n == postorder[-1] == len([j for j in postorder if j == 1])):
+                warnings.warn("There is a major issue with the postorder traversal. The sample size is incorrect.")
+
+            arr = np.empty((0, self.n), dtype=np.int8)
+            leaves_buffer = dict()
+            for i in range(2, self.n + 1):
+                leaves_buffer[i] = list()
+
+            leaves_counter = 0
+            for i in range(len(postorder) - 1):
+                row = np.zeros(self.n, dtype=np.int8)
+
+                if postorder[i] == 1:
+                    row[leaves_counter] = 1
+                    leaves_counter += 1
+                    for j in range(2, self.n + 1):
+                        leaves_buffer[j].append(leaves_counter - 1)
+                else:
+                    row[leaves_buffer[postorder[i]]] = [1] * len(leaves_buffer[postorder[i]])
+                    for j in range(2, postorder[i] + 1):
+                        leaves_buffer[j] = list()
+
+                arr = np.append(arr, [row], axis=0)
+
+            self.binary_rep = arr
+            self.decimal_rep = set(transform_bin_arr_to_dec(arr))
+            self.decimal_col_rep = transform_bin_arr_to_dec(np.transpose(arr))
+            return arr
+
+        return self.binary_rep, self.decimal_rep, self.decimal_col_rep
+
+
+class TreeShapesN:
+    """ Class which collects all information for all tree shapes for a given sample size n. """
+
+    def __init__(self, tree_shapes, n_unranked):
+        self.tree_shapes = tree_shapes
+        self.n_unranked = n_unranked
+        self.len = len(tree_shapes)
+
+    def append(self, tree_shape):
+        self.tree_shapes.append(tree_shape)
+        self.len = len(self.tree_shapes)
+
+    def test_n_unranked(self):
+        n_unranked_acc = 0
+        for tree_shape in self.tree_shapes:
+            n_unranked_acc += tree_shape.n_unranked
+        if n_unranked_acc != self.n_unranked:
+            warnings.warn('The total number of unranked topologies is incorrectly represented.')
+            return False
+        else:
+            return True
+
+    def give_attr(self, attr):
+        collector = list()
+        for tree_shape in self.tree_shapes:
+            collector.append(getattr(tree_shape, attr))
+        return collector
+
+
+class TreeShapes:
+    """ Class for all tree shapes (equivalence classes) up to and including sample size n.
+        At n=20, there are 127 912 tree shapes. """
+
+    def __init__(self):
+        """ Typically, data is the number of leaves below a node. """
+        self.data = dict()
+        self.n_max = 1
+
+        tree_shape = TreeShape(1, [['*']], 0, Node(1), 1)
+        tree_shape.construct_representative()
+        self.data[1] = TreeShapesN([tree_shape], 1)
+
+    def construct(self, n):
+        """ Construct all tree shapes up to n. """
+        if n > self.n_max:
+            self.n_max = n
+        else:
+            return False
+
+        for i in range(2, n + 1):
+            tree_shapes_n = TreeShapesN(list(), give_unranked_top_total(i))
+            for j in range(1, round(i / 2 + 1e-3)):
+                for k in range(self.data[j].len):
+                    for l in range(self.data[i - j].len):
+                        newick = [self.data[i - j].tree_shapes[l].newick, self.data[j].tree_shapes[k].newick]
+                        n_s = self.data[i - j].tree_shapes[l].n_s + self.data[j].tree_shapes[k].n_s
+                        entry_node = Node(i)
+                        entry_node.left = self.data[i - j].tree_shapes[l].entry_node
+                        entry_node.right = self.data[j].tree_shapes[k].entry_node
+                        n_unranked = give_unranked_top_tree_shape(i, n_s)
+
+                        tree_shape = TreeShape(i, newick, n_s, entry_node, n_unranked)
+                        tree_shape.construct_representative()
+                        tree_shapes_n.append(tree_shape)
+
+            if i % 2 == 0:
+                """ Uneven n are easier to handle. Even n require additional attention at n/2, since one shall not
+                    double-count unranked topologies. """
+                j = round(i / 2 + 1e-3)
+                for k in range(self.data[j].len):
+                    for l in range(k, self.data[i - j].len):
+                        newick = [self.data[i - j].tree_shapes[l].newick, self.data[j].tree_shapes[k].newick]
+
+                        if k == l:
+                            n_s = self.data[i - j].tree_shapes[l].n_s + self.data[j].tree_shapes[k].n_s + 1
+                        else:
+                            n_s = self.data[i - j].tree_shapes[l].n_s + self.data[j].tree_shapes[k].n_s
+
+                        entry_node = Node(i)
+                        entry_node.left = self.data[i - j].tree_shapes[l].entry_node
+                        entry_node.right = self.data[j].tree_shapes[k].entry_node
+                        n_unranked = give_unranked_top_tree_shape(i, n_s)
+
+                        tree_shape = TreeShape(i, newick, n_s, entry_node, n_unranked)
+                        tree_shape.construct_representative()
+                        tree_shapes_n.append(tree_shape)
+
+            self.data[i] = tree_shapes_n
+        return True
+
+    def get_attr(self, n, attr):
+        collector = list()
+        for tree_shape in self.data[n].tree_shapes:
+            collector.append(getattr(tree_shape, attr))
+        return collector
+
+    def give_info(self):
+        print(f"The tree shapes are cached up until and including n={self.n_max}.")
+
+        for i in range(1, self.n_max + 1):
+            print()
+            print(f"n = {i}:")
+            print(f"n_unranked = {self.data[i].n_unranked}")
+            for attr in ["newick", "n_s", "entry_node", "n_unranked", "binary_rep", "decimal_rep", "decimal_col_rep"]:
+                print(f"Attr = '{attr}':")
+                print(self.get_attr(i, attr))
+
+                """ By construction the decimal representation of the binary column arrays are strictly decreasing.
+                This can be proved with the help of the recursive block matrix construction of the binary matrix.
+                To show this, I will quickly print the decimals out per matrix here also. """
+
+
+def powerset_without_trivials(iterable):
+    """ Returns the powerset without the trivial elements (empty set and full set), i.e., 2^n-2 elements.
+        powerset(range(3)) --> (0,), (1,) (2,) (0, 1) (0, 2) (1, 2) """
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(1, len(s)))
+
+
+def get_support(iterable):
+    """ Returns the support, i.e., indices with non-zero elements. """
+    return np.where(iterable > 0)[0]
+
+
+def give_binary_repr(indices, n):
+    out = np.zeros(n, dtype=np.int8)
+    for i in indices:
+        out[i] = 1
+    return out
+
+
+def give_concordant_tree_shapes(k, n, tree_shapes):
+    """ Returns the concordant tree shapes via an array of indices corresponding to the list of tree shapes for n.
+        This function still requires improvements. """
+
+    # Generate all possible branchtypes to be counted in k
+    branchtypes = powerset_without_trivials(range(n))
+    all_binary_repr = np.array([give_binary_repr(branchtype, n) for branchtype in branchtypes], dtype=np.int8)
+
+    """ Firstly, we get the supported binary branches, and then we reorder them by column decimals. This transforms a
+        particular ranked topology into the corresponding representative within the tree shape (equivalence class). """
+    k_sup = get_support(k)
+    bin_bra_sup = all_binary_repr[k_sup, :]
+    ranks = (-np.array(transform_bin_arr_to_dec(np.transpose(bin_bra_sup)), dtype=np.int8)).argsort()
+    bin_bra_sup = bin_bra_sup[:, ranks]
+    dec_bra_sup = set(transform_bin_arr_to_dec(bin_bra_sup))
+
+    return np.where(np.array([dec_bra_sup.issubset(tree_shape.decimal_rep) for tree_shape in \
+                              tree_shapes.data[n].tree_shapes]))[0]
+
+
+if __name__ == "__main__":
+    """ Tutorial """
+
+    # Generate tree shapes data structure including representatives
+    tree_shapes = TreeShapes()
+    tree_shapes.construct(n=10)  # could be easily pickled
+    # tree_shapes.give_info()  # prints all info about the tree shapes
+
+    # Example k input with counts of occurences of branchetype mutations
+    n = 4
+    k = np.zeros(2 ** n - 2, dtype=np.int8)
+    k[n] = 1  # Just flag a single double-branch, e.g., "w_ab".
+    print(give_concordant_tree_shapes(k, n, tree_shapes))
