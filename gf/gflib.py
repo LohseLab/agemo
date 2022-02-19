@@ -431,7 +431,8 @@ class GFMatrixObject(GFObject):
 						state_eq_dict[(parent, child)] = eq_idx
 						eq_idx+=1
 		
-		#eq_graph_array, eq_array, to_invert_array, eq_matrix		
+		#eq_graph_array, eq_array, to_invert_array, eq_matrix
+		#array representation of graph, linking nodes to eqs , boolean_to_invert, matrix_with_coefficients		
 		return (*remap_eq_arrays(eq_graph_dict, equation_dict, node_idx, inverted_node_idx), np.concatenate(eq_list, axis=0))
 
 	def gf_single_step(self, state_list):
