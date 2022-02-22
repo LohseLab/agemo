@@ -1,0 +1,9 @@
+format: jb-book
+root: intro
+parts:
+- caption: Getting started
+  chapters:
+  - file: installation
+- caption: Interface
+  chapters:
+  - file: api

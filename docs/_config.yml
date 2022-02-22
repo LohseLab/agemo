@@ -1,0 +1,27 @@
+title: agemo manual
+author: Gertjan Bisschop
+copyright: "2022"
+only_build_toc_files: true
+
+repository:
+  url: https://github.com/LohseLab/agemo
+  branch: main
+  path_to_book: docs
+
+sphinx:
+  extra_extensions:
+  - sphinx.ext.autodoc
+  - sphinx.ext.autosummary
+  - sphinx.ext.todo
+  - sphinx.ext.viewcode
+
+  config:
+    myst_enable_extensions:
+    - colon_fence
+    - deflist
+    
+    todo_include_todos: true
+
+    nitpicky: true
+    
+    autodoc_member_order: bysource
