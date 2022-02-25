@@ -4,6 +4,8 @@ parts:
 - caption: Getting started
   chapters:
   - file: installation
+  - file: quickstart
+  - file: bSFS
 - caption: Interface
   chapters:
   - file: api
