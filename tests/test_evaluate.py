@@ -3,10 +3,10 @@ import pytest
 import sage.all
 
 import tests.gfdev as gfdev
-import gf.gflib as gflib
-import gf.mutations as mut
-import gf.legacy.mutations as smut
-import gf.legacy.evaluate as leval
+import agemo.gflib as gflib
+import agemo.mutations as mut
+import agemo.legacy.mutations as smut
+import agemo.legacy.evaluate as leval
 
 all_configs = {
     "IM_AB": {

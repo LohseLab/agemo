@@ -1,8 +1,8 @@
 import numpy as np
 import numba
 
-import gf.diff as gfdiff
-import gf.mutations as gfmuts
+import agemo.diff as gfdiff
+import agemo.mutations as gfmuts
 
 # getting out bSFS
 

@@ -1,7 +1,7 @@
 import itertools
 import numpy as np
 import sage.all
-import gf.gflib as gflib
+import agemo.gflib as gflib
 
 
 def single_partial(ordered_mutype_list, partial):

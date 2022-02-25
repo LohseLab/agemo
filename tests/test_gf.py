@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 import sage.all
 
-import gf.gflib as gflib
-import gf.mutations as mut
-import gf.legacy.mutations as smut
+import agemo.gflib as gflib
+import agemo.mutations as mut
+import agemo.legacy.mutations as smut
 
 import tests.gfdev as gfdev
 
