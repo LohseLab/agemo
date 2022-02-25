@@ -1,9 +1,9 @@
 import numpy as np
 import sage.all
 
-import gf.gflib as gflib
-import gf.inverse as gfinverse
-import gf.legacy.inverse as linverse
+import agemo.gflib as gflib
+import agemo.inverse as gfinverse
+import agemo.legacy.inverse as linverse
 
 
 def get_parameter_dict(coalescence_rates, global_info, sim_config, gf_vars):

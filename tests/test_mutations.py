@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-import gf.mutations as mut
-import gf.legacy.evaluate as leval
+import agemo.mutations as mut
+import agemo.legacy.evaluate as leval
 
 
 @pytest.mark.muts

@@ -1,8 +1,8 @@
 import numpy as np
 import sage.all
 import sys
-import gf.gflib as gflib
-import gf.mutations as mutations
+import agemo.gflib as gflib
+import agemo.mutations as mutations
 
 from . import mutations as smut
 from . import inverse

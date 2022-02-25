@@ -7,12 +7,12 @@ import scipy.stats as stats
 
 from scipy.special import factorial
 
-import gf.gflib as gflib
-import gf.diff as gfdiff
-import gf.mutations as gfmuts
-import gf.evaluate as gfeval
-import gf.legacy.inverse as linverse
-import gf.legacy.mutations as smuts
+import agemo.gflib as gflib
+import agemo.diff as gfdiff
+import agemo.mutations as gfmuts
+import agemo.evaluate as gfeval
+import agemo.legacy.inverse as linverse
+import agemo.legacy.mutations as smuts
 import tests.gfdev as gfdev
 
 

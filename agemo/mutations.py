@@ -5,7 +5,7 @@ import math
 import numpy as np
 import numba
 
-import gf.gflib as gflib
+import agemo.gflib as gflib
 
 
 def return_mutype_configs(max_k, include_marginals=True):
