@@ -8,6 +8,9 @@ repository:
   branch: main
   path_to_book: docs
 
+bibtex_bibfiles:
+    - references.bib
+
 sphinx:
   extra_extensions:
   - sphinx.ext.autodoc
@@ -19,9 +22,12 @@ sphinx:
     myst_enable_extensions:
     - colon_fence
     - deflist
+    - dollarmath
     
     todo_include_todos: true
 
     nitpicky: true
     
     autodoc_member_order: bysource
+
+    bibtex_reference_style: author_year

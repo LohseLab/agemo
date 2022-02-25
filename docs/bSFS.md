@@ -1,0 +1,5 @@
+# bSFS
+
+The block-wise site frequency spectrum or bSFS is the vector of site frequency spectrum counts in short blocks of a fixed length. It is the probability of seeing $k_i$ mutations on each of the $i$ distinguished branchtypes. For an unphased sample of size 3 the bSFS would be a vector of the form $\{k_1, k_2\}$ with $k_1$ and $k_2$ representing the number of singletons and doubletons respectively. Each count is an element within the interval $[0, 1, 2, ... , k_i^{max} + 1]$ where $k_i^{max} + 1$ is used to bin all mutation configurations with more than $k_i^{max}$ mutations. 
+
+Associating each bSFS vector or mutation type with its corresponding probability of observing it under a specified model results in an array of shape $ (k_1^{max}+1, ... , k_i^{max}+1) $. With $i$ the number of distinguished branchtypes. 

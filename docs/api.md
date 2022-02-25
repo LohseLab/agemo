@@ -1,3 +1,6 @@
 # Python API
 
-Enter details on agemo's python API
+```{eval-rst}
+.. todo::
+	Document API
+```
