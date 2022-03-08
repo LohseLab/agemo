@@ -449,6 +449,9 @@ class BranchTypeCounter(TypeCounter):
     def custom_mapping(self):
         return self._custom_mapping
 
+    def __len__(self):
+        return len(self._labels)
+
     def custom_branchtype_dict_mapping(self, branchtype_dict):
         if branchtype_dict is None:
             return None
@@ -529,7 +532,7 @@ class MutationTypeCounter(TypeCounter):
         compatibility_check = branchtype_compatibility(
             BranchTypeCounter.binary_representation
         )
-        num_branchtypes = BranchTypeCounter.binary_representation.shape[-1]
+        num_branchtypes = len(BranchTypeCounter)
         self._binary_representation = np.array(
             compatibility_depth_first(compatibility_check, num_branchtypes),
             dtype=np.uint8,
@@ -572,6 +575,9 @@ class MutationTypeCounter(TypeCounter):
     @property
     def impossible_mutypes(self):
         return self._impossible_mutypes
+
+    def __len__(self):
+        return len(self._all_mutypes)
 
     def sort_all_mutypes(self, mutype_shape):
         all_mutypes_unsorted = []
