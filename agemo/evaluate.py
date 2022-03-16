@@ -91,6 +91,8 @@ class gfEvaluatorLegacy:
 
 class gfEvaluator:
     def __init__(self, gfObj, MutationTypeCounter):
+        if MutationTypeCounter.phased:
+            raise NotImplementedError('Calculating the bSFS for the fully phased case is still under development.')
         delta_idx = gfObj.exodus_rate  # what value if None
         # only works with single delta_idx!
         (

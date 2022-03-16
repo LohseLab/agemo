@@ -224,53 +224,13 @@ def get_binary_branchtype_array(num_samples):
     return x
 
 
-def permuatation_repr_binary_branchtype_array(b, slices=None):
-    if slices is None:
-        length_slices = b.shape[-1:]
-    else:
-        length_slices = slices + b.shape[-1:]
-    num_permutations = np.prod([math.factorial(i) for i in length_slices])
-    shape = (b.shape[0], num_permutations)
-    result = np.zeros(shape, dtype=np.uint64)
-    for idx, subb in enumerate(b):
-        for idx2, numeric_rep in enumerate(
-            single_branchtype_equivalences(subb, slices)
-        ):
-            result[idx, idx2] = numeric_rep
-    return result
-
-
-def mutype_equivalences(mutype, permutation_array):
-    idx = np.array(mutype)
-    return np.sort(permutation_array[idx == 1].T, axis=-1)
-
-
-def single_branchtype_equivalences(b, slices=None):
-    if slices is None:
-        slices = np.array([])
-    b_pop = np.split(b, slices)
-    for p in all_permutations(*b_pop):
-        yield branchtype_to_single_number(p)
-
-
 @numba.vectorize([numba.uint8(numba.uint8, numba.uint8)])
 def packbits(x, y):
     return 2 * x + y
 
 
-def branchtype_to_single_number(b):
-    return packbits.reduce(b)
-
-
-def all_permutations(*b):
-    for r in itertools.product(*[single_permutation(m) for m in b]):
-        yield np.hstack(tuple(r))
-
-
-def single_permutation(b):
-    dim = b.size
-    for ordering in itertools.permutations(range(dim)):
-        yield b[np.array(ordering)]
+def binary_to_decimal(b):
+    return packbits.reduce(b, axis=-1)
 
 
 def flatten(input_list):
@@ -369,19 +329,63 @@ def compatibility_depth_first(compatibility_check, size):
 
     return possible
 
+def all_within_deme_permutations(b, slices=None):
+    if slices is None:
+        slices = np.array([])
+    b_pop = np.split(b, slices, axis=-1)
+    for p in all_permutations(*b_pop):
+        yield p
 
-def distribute_mutations(branchtype, mutype_shape):
-    boolean = np.array(branchtype).copy().astype(bool)
-    result = np.zeros(len(branchtype), dtype=np.uint8)
+
+def all_permutations(*b):
+    for r in itertools.product(*[single_permutation_2d(m) for m in b]):
+        yield np.hstack(tuple(r))
+
+
+def single_permutation_2d(b):
+    dim = b.shape[-1]
+    if len(np.unique(b))==1:
+        yield b
+        return
+    else:
+        for ordering in itertools.permutations(range(dim)):
+            yield b[:, np.array(ordering)]
+
+
+def equivalences_single_mutype(mutype, mutype_shape, stack_to_idx, branchtype_array, slices):
+    num_mutypes = len(mutype_shape)
+    non_zero_idx_base = np.flatnonzero(mutype)
+    stacked_repr = branchtype_array[non_zero_idx_base]
+    all_permutations = list(all_within_deme_permutations(stacked_repr, slices))
+    mutations_to_distribute = np.array(mutype_shape)[non_zero_idx_base]
+    non_zero_idxs_equivalent = np.zeros((len(all_permutations) - 1, len(mutations_to_distribute)), dtype=int)
+    
+    for pidx in range(len(all_permutations) - 1): 
+        dec_repr = binary_to_decimal(all_permutations[pidx+1])
+        non_zero_idxs_equivalent[pidx] = [stack_to_idx[dec] for dec in dec_repr]
+        
+    for d in itertools.product(*(range(1,a) for a in mutations_to_distribute)):       
+        result = np.zeros(num_mutypes, dtype=int)
+        result[non_zero_idx_base] = d
+        base_mutype = tuple(result)
+        for non_zero_idx_equivalent in non_zero_idxs_equivalent:
+            result = np.zeros(num_mutypes, dtype=int)
+            result[non_zero_idx_equivalent] = d
+            yield (base_mutype, tuple(result))
+
+
+def distribute_mutations(mutationtype, mutype_shape):
+    boolean = np.array(mutationtype).copy().astype(bool)
+    result = np.zeros(len(mutationtype), dtype=np.uint8)
     for d in itertools.product(*(range(1, a) for a in mutype_shape[boolean])):
         result[boolean] = d
         yield tuple(result)
 
 
-def distribute_mutations_all_mutypes(possible_branchtypes, mutype_shape):
+def distribute_mutations_all_mutypes(possible_mutationtypes, mutype_shape):
     mutype_shape = np.array(mutype_shape, dtype=np.uint8)
-    for bt in possible_branchtypes:
-        yield from distribute_mutations(bt, mutype_shape)
+    for mt in possible_mutationtypes:
+        yield from distribute_mutations(mt, mutype_shape)
 
 
 class TypeCounter:
@@ -544,17 +548,13 @@ class MutationTypeCounter(TypeCounter):
                 :, BranchTypeCounter.custom_mapping
             ]
 
-        # a lot of copying here, perhaps just link branchtypecounter instead of copying all values?
-        self._sample_configuration = BranchTypeCounter.sample_configuration
-        self._samples_per_pop = BranchTypeCounter.samples_per_pop
-        self._labels = BranchTypeCounter.labels
-        self._labels_dict = BranchTypeCounter.labels_dict
+        self._BranchTypeCounter = BranchTypeCounter
         self._mutype_shape = mutype_shape
-        self._all_mutypes, self._all_mutypes_ravel = self.sort_all_mutypes(
-            mutype_shape
-        )
-        self._equiprobable_mutypes_ravel = 0
-        self._impossible_mutypes_ravel = 0
+        self._all_mutypes, self._all_mutypes_ravel = self.generate_and_sort_all_mutypes()
+        
+        self._equiprobable_mutypes_ravel = None #array if BranchTypeCounter.phased
+        self._equiprobable_to_base_mutype = None #dict if BranchTypeCounter.phased
+        self._sample_slicing = np.cumsum([i for i in self._BranchTypeCounter._samples_per_pop if i!=0])[:-1]
 
     @property
     def mutype_shape(self):
@@ -573,20 +573,50 @@ class MutationTypeCounter(TypeCounter):
         return self._equiprobable_mutypes_ravel
 
     @property
-    def impossible_mutypes(self):
-        return self._impossible_mutypes
+    def BranchTypeCounter(self):
+        return self._BranchTypeCounter
+    
+    @property
+    def sample_configuration(self):
+        return self._BranchTypeCounter._sample_configuration
+
+    @property
+    def samples_per_pop(self):
+        return self._BranchTypeCounter._samples_per_pop
+
+    @property
+    def labels(self):
+        return self._BranchTypeCounter._labels
+    
+    @property
+    def labels_dict(self):
+        return self._BranchTypeCounter._labels_dict
+
+    @property
+    def phased(self):
+        return self._BranchTypeCounter._phased
+
+    @property
+    def rooted(self):
+        return self._BranchTypeCounter._rooted
 
     def __len__(self):
         return len(self._all_mutypes)
 
-    def sort_all_mutypes(self, mutype_shape):
+    def generate_and_sort_all_mutypes(self):
+        if self.phased:
+            return self.generate_and_sort_all_mutypes_phased()
+        else:
+            return self.generate_and_sort_all_mutypes_unphased()
+
+    def generate_and_sort_all_mutypes_unphased(self):
         all_mutypes_unsorted = []
         ravel_idxs = []
         for mutype in distribute_mutations_all_mutypes(
-            self.binary_representation, mutype_shape
+            self.binary_representation, self.mutype_shape
         ):
             all_mutypes_unsorted.append(mutype)
-            ravel_idxs.append(ravel_multi_index(mutype, mutype_shape))
+            ravel_idxs.append(ravel_multi_index(mutype, self.mutype_shape))
         all_mutypes_unsorted = np.array(all_mutypes_unsorted, dtype=np.int64)
         ravel_idxs = np.array(ravel_idxs, dtype=np.int64)
         ravel_idxs_to_sort = np.argsort(ravel_idxs)
@@ -595,3 +625,36 @@ class MutationTypeCounter(TypeCounter):
             all_mutypes_unsorted[ravel_idxs_to_sort],
             ravel_idxs[ravel_idxs_to_sort],
         )
+
+
+    def generate_and_sort_all_mutypes_phased(self):
+        stack_to_idx = {dec:idx for idx, dec in  enumerate(binary_to_decimal(self.BranchTypeCounter.binary_representation))}
+        self._equiprobable_to_base_mutype = {}
+        ravel_idxs, all_mutypes_unsorted = [], []
+        for mutype in self._binary_representation:
+            ravel_mutype = multi_index_ravel(mutype, self.mutype_shape)
+            if ravel_mutype not in self._equiprobable_mutypes_ravel:
+                equivalent_mutype_list = []
+                for base_mutype, equivalent_mutype in equivalences_single_mutype(
+                                                mutype, 
+                                                self.mutype_shape, 
+                                                stack_to_idx, 
+                                                self.BranchTypeCounter.binary_representation, 
+                                                self._sample_slicing):
+                    
+                    base_mutype_ravel = multi_index_ravel(base_mutype, self.mutype_shape)
+                    self._equiprobable_to_base_mutype[multi_index_ravel(equivalent_mutype, self.mutype_shape)] = base_mutype_ravel
+                    ravel_idxs.append(base_mutype_ravel)
+                    all_mutypes_unsorted.append(base_mutype)
+                    equivalent_mutype_list.append(equivalent_mutype_ravel)
+
+            self._equiprobable_mutypes_ravel.append(numpy.array(equivalent_mutype_list, dtype=np.int64))
+
+        ravel_idxs = np.array(ravel_idxs, dtype=np.int64)
+        ravel_idxs_to_sort = np.argsort(ravel_idxs)
+        temp = [None for _ in range(len(ravel_idxs))]
+        for idx in range(len(temp)):
+            temp[idx] = self._equiprobable_mutypes_ravel[ravel_idxs_to_sort[idx]]
+        self._equiprobable_mutypes_ravel = temp
+
+        return all_mutypes_unsorted[ravel_idxs_to_sort], ravel_idxs[ravel_idxs_to_sort]
