@@ -98,7 +98,7 @@ class Test_gf_simple:
         ordered_mutype_list = gflib.sort_mutation_types(branchtype_dict)
         rate_dict = {branchtype: theta for branchtype in ordered_mutype_list}
         coalescence_rates = (1,)
-        gfobj = gflib.GFObject(sample_list, coalescence_rates, branchtype_dict)
+        gfobj = gflib.GfObject(sample_list, coalescence_rates, branchtype_dict)
         gf = sum(gfobj.make_gf())
         max_k = np.array([2, 2])
         all_mutation_configurations = list(mut.return_mutype_configs(max_k))
@@ -181,7 +181,7 @@ class Test_zero_division:
         parameter_dict = {**parameter_dict, **coal_rates_values}
         # theta = sage.all.Rational(1)
         epsilon = sage.all.Rational(0.00001)
-        gfEvaluatorObj = leval.gfEvaluator(
+        gfEvaluatorObj = leval.GfEvaluator(
             gf,
             max_k,
             mutype_labels,
@@ -210,7 +210,7 @@ class Test_zero_division:
         parameter_dict = {**parameter_dict, **coal_rates_values}
         # theta = sage.all.Rational(1)
         epsilon = sage.all.Rational(0.00001)
-        gfEvaluatorObj = leval.gfEvaluator(
+        gfEvaluatorObj = leval.GfEvaluator(
             gf,
             max_k,
             mutype_labels,
@@ -252,7 +252,7 @@ class Test_to_gimble:
             exodus_direction=exodus_direction,
             exodus_rate=exodus_rate,
         )
-        gfEvaluatorObj = leval.gfEvaluator(
+        gfEvaluatorObj = leval.GfEvaluator(
             gf,
             max_k,
             mutype_labels,

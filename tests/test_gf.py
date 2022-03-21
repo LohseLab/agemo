@@ -52,7 +52,7 @@ class Test_aux:
         branchtype_dict = smut.make_branchtype_dict(
             sample_list, mapping="label"
         )
-        gfobj = gflib.GFObject(
+        gfobj = gflib.GfObject(
             sample_list,
             (1, 1, 1),
             branchtype_dict,
@@ -97,7 +97,7 @@ class Test_aux:
         branchtype_dict = smut.make_branchtype_dict(
             sample_list, mapping="label"
         )
-        gfobj = gflib.GFObject(
+        gfobj = gflib.GfObject(
             sample_list,
             coalescence_rates,
             branchtype_dict,
@@ -141,7 +141,7 @@ class Test_aux:
         branchtype_dict = smut.make_branchtype_dict(
             sample_list, mapping="label"
         )
-        gfobj = gflib.GFObject(
+        gfobj = gflib.GfObject(
             sample_list,
             (1, 1, 1),
             branchtype_dict,
@@ -159,7 +159,7 @@ class Test_aux:
         branchtype_dict = smut.make_branchtype_dict(
             sample_list, mapping="label"
         )
-        gfobj = gflib.GFObject(
+        gfobj = gflib.GfObject(
             sample_list,
             (1, 1, 1),
             branchtype_dict,
@@ -176,7 +176,7 @@ class Test_aux:
         branchtype_dict = smut.make_branchtype_dict(
             sample_list, mapping="label"
         )
-        gfobj = gflib.GFObject(
+        gfobj = gflib.GfObject(
             sample_list,
             (1, 1, 1),
             branchtype_dict,
@@ -194,7 +194,7 @@ class Test_aux:
             sample_list, mapping="label"
         )
         exodus_rate = sage.all.SR.var("E")
-        gfobj = gflib.GFObject(
+        gfobj = gflib.GfObject(
             sample_list,
             (1, 1, 1),
             branchtype_dict,
@@ -216,7 +216,7 @@ class Test_gf:
         branchtype_dict = smut.make_branchtype_dict(
             sample_list, mapping="unrooted"
         )
-        gfobj = gflib.GFObject(sample_list, (1,), branchtype_dict)
+        gfobj = gflib.GfObject(sample_list, (1,), branchtype_dict)
         result = list(gfobj.make_gf())
         subs_dict = {k: 0 for k in set(branchtype_dict.values())}
         assert sum([x.substitute(subs_dict) for x in result]) == 1
@@ -253,7 +253,7 @@ class Test_matrix_aux:
     def test_coalescence(self, sample_list, check):
         # rate_array: [c0,c1,c2,M,E,m_1,m_2,m_3,m_4]
         branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             sample_list,
             (0, 1, 2),
             branchtype_dict,
@@ -292,7 +292,7 @@ class Test_matrix_aux:
     def test_coalescence_same_rates(self, sample_list, check):
         coalescence_rates = (0, 0, 1)
         branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             sample_list,
             coalescence_rates,
             branchtype_dict,
@@ -334,7 +334,7 @@ class Test_matrix_aux:
     )
     def test_migration(self, sample_list, check):
         branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             sample_list,
             (0, 1, 2),
             branchtype_dict,
@@ -350,7 +350,7 @@ class Test_matrix_aux:
     def test_migration_empty(self):
         sample_list = [(), (), ("c", "d")]
         branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             sample_list,
             (0, 1, 2),
             branchtype_dict,
@@ -365,7 +365,7 @@ class Test_matrix_aux:
     def test_exodus_empty(self):
         sample_list = [(), (), ("c", "d")]
         branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             sample_list,
             (0, 1, 2),
             branchtype_dict,
@@ -380,7 +380,7 @@ class Test_matrix_aux:
     def test_exodus(self):
         sample_list = [(), ("a", "a"), ("c", "d")]
         branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             sample_list,
             (0, 1, 2),
             branchtype_dict,
@@ -400,7 +400,7 @@ class Test_Simple_Models:
     def test_single_step(self):
         sample_list = [("a", "a", "b", "b")]
         branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GFMatrixObject(sample_list, (0,), branchtype_dict)
+        gfobj = gflib.GfMatrixObject(sample_list, (0,), branchtype_dict)
         multiplier_array, new_state_list = gfobj.gf_single_step(sample_list)
         print("new_state_list:", new_state_list)
         print("multiplier_array:")
@@ -422,7 +422,7 @@ class Test_Simple_Models:
     def test_single_step_exodus(self):
         sample_list = [("a", "a", "b", "b"), ()]
         branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             sample_list,
             (0, 1),
             branchtype_dict,
@@ -454,7 +454,7 @@ class Test_Simple_Models:
     def test_single_step_exodus2(self):
         sample_list = [("a", "a"), ("b", "b")]
         branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             sample_list,
             (0, 1),
             branchtype_dict,
@@ -545,7 +545,7 @@ class Test_Paths:
         variables_array += [sage.all.SR.var(m) for m in mutype_labels]
         variables_array = np.array(variables_array, dtype=object)
 
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             sample_list,
             coalescence_rate_idxs,
             branchtype_dict_mat,
@@ -556,7 +556,7 @@ class Test_Paths:
         )
         gf_mat = list(gfobj.make_gf())
 
-        gfobj2 = gflib.GFObject(
+        gfobj2 = gflib.GfObject(
             sample_list,
             coalescence_rates,
             branchtype_dict_chain,

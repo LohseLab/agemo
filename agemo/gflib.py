@@ -100,7 +100,7 @@ def paths_from_visited_node(graph, node, equation_dict, path):
             yield path
 
 
-class GFObject:
+class GfObject:
     def __init__(
         self,
         sample_list,
@@ -248,7 +248,7 @@ class GFObject:
                     stack.append(gf_nplus1)
 
 
-class GFObjectChainRule(GFObject):
+class GfObjectChainRule(GfObject):
     def make_gf(self):
         stack = [
             (list(), self.sample_list),
@@ -304,7 +304,7 @@ class GFObjectChainRule(GFObject):
             ]
 
 
-class GFMatrixObject(GFObject):
+class GfMatrixObject(GfObject):
     def __init__(
         self,
         sample_list,
