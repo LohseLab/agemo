@@ -7,7 +7,7 @@ import agemo.mutations as gfmuts
 # getting out bSFS
 
 
-class gfEvaluatorLegacy:
+class GfEvaluatorLegacy:
     def __init__(self, gfobj, k_max, mutype_array):
         delta_idx = gfobj.exodus_rate  # what value if None
         # only works with single delta_idx!
@@ -89,7 +89,7 @@ class gfEvaluatorLegacy:
         return var
 
 
-class gfEvaluator:
+class BSFSEvaluator:
     def __init__(self, gfObj, MutationTypeCounter):
         if MutationTypeCounter.phased:
             raise NotImplementedError('Calculating the bSFS for the fully phased case is still under development.')

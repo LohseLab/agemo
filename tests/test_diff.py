@@ -355,7 +355,7 @@ class Test_collapse_graph:
         branchtype_dict = {}
         exodus_rate = 1
         exodus_direction = [(1, 0)]
-        gfObj = gflib.GFMatrixObject(
+        gfObj = gflib.GfMatrixObject(
             sample_list,
             coalescence_rates,
             branchtype_dict,
@@ -424,7 +424,7 @@ class Test_collapse_graph:
             (1, 0),
         ]
         mutype_labels, max_k = zip(*sorted(k_max.items()))
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             sample_list,
             coalescence_rate_idxs,
             branchtype_dict,
@@ -452,7 +452,7 @@ class Test_taylor_single_pop:
         variable_array = np.hstack((variable_array, theta_array))
         time = 1.5
 
-        gfEvalObj = gfeval.gfEvaluator(gfobj, mtc)
+        gfEvalObj = gfeval.BSFSEvaluator(gfobj, mtc)
         result_with_marginals = evaluate_no_marginal(
             gfEvalObj, theta, variable_array, time
         )
@@ -492,7 +492,7 @@ class Test_taylor_single_pop:
         # k_max = {f'm_{idx}':2 for idx in range(1,size)}
         # mutype_labels, max_k = zip(*sorted(k_max.items()))
         # branchtype_dict_mat = {'a'*idx:idx-1 for idx in range(1,size)}
-        gfobj = gflib.GFMatrixObject(
+        gfobj = gflib.GfMatrixObject(
             btc.sample_configuration,
             coalescence_rate_idxs,
             btc.labels_dict,
@@ -514,7 +514,7 @@ class Test_taylorIM:
         theta_array = np.full(len(max_k), fill_value=theta)
         var = np.hstack((variable_array, theta_array))
 
-        gfEvalObj = gfeval.gfEvaluator(gfobj, get_MT_object)
+        gfEvalObj = gfeval.BSFSEvaluator(gfobj, get_MT_object)
         result = gfEvalObj.evaluate(theta, var, time)
         self.compare_ETPs_model(model, result)
 
@@ -599,7 +599,7 @@ class Test_epsilon:
         theta_array = np.full(len(max_k), fill_value=theta)
         var = np.hstack((variable_array, theta_array))
 
-        gfEvalObj = gfeval.gfEvaluator(gfobj, get_MT_object)
+        gfEvalObj = gfeval.BSFSEvaluator(gfobj, get_MT_object)
         result_with_marginals = gfEvalObj.evaluate(theta, var, time)
         sim_counts = np.load("tests/ETPs/IM_BA_epsilon_sim.npy")
         result_with_marginals[result_with_marginals < 0] = 0
@@ -678,7 +678,7 @@ def get_IM_gfobject_BT(params, btc):
         exodus_rate_idx = num_variables
         num_variables += 1
 
-    gfobj = gflib.GFMatrixObject(
+    gfobj = gflib.GfMatrixObject(
         btc.sample_configuration,
         coalescence_rate_idxs,
         btc.labels_dict,

@@ -66,7 +66,7 @@ class Test_mutypetree:
             ]
         )
         mutypes = tuple(f"m_{idx}" for idx in range(len(max_k)))
-        gfEvaluatorObj = leval.gfEvaluator(
+        gfEvaluatorObj = leval.GfEvaluator(
             gf, max_k, mutypes, exclude=exclude, restrict_to=restrict_to
         )
 

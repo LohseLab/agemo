@@ -24,7 +24,7 @@ def _get_gfObj(
         sample_list, mapping="unrooted", labels=mutype_labels
     )
 
-    gfobj = gflib.GFObject(
+    gfobj = gflib.GfObject(
         sample_list,
         coalescence_rates,
         branchtype_dict,
@@ -65,7 +65,7 @@ def get_gf(
     return _return_inverse_laplace(gfobj, gf)
 
 
-class gfEvaluator:
+class GfEvaluator:
     def __init__(
         self, gf, max_k, mutypes, precision=165, exclude=None, restrict_to=None
     ):
