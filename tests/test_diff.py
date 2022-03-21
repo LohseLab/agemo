@@ -708,6 +708,8 @@ def chisquare(
     # obs_smaller = np.sum(obs[binning_idxs == 0])
     exp_binned = exp[binning_idxs == 1]
     obs_binned = obs[binning_idxs == 1]
+    #make sure exp_binned and obs_binned sum to same value
+    exp_binned *= (np.sum(obs_binned)/np.sum(exp_binned))
     not_zeros = exp_binned > 0
     if sum(not_zeros) < 1:
         assert False  # expected probabilities are all 0

@@ -104,7 +104,8 @@ class gfEvaluator:
         self.dependency_sequence = gfdiff.resolve_dependencies(
             self.eq_graph_array
         )
-
+        self.eq_graph_array = numba.typed.List(self.eq_graph_array)
+        
         self.final_result_shape = MutationTypeCounter.mutype_shape
         size, self.num_branchtypes = MutationTypeCounter.all_mutypes.shape
         self.simple_reshape = np.prod(self.final_result_shape) == size
