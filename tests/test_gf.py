@@ -4,6 +4,7 @@ import sage.all
 
 import agemo.gflib as gflib
 import agemo.mutations as mut
+import agemo.events as eventslib
 import agemo.legacy.mutations as smut
 
 import tests.gfdev as gfdev
@@ -22,7 +23,8 @@ class Test_aux:
         ],
     )
     def test_coalesce_lineages(self, input_lineages, to_join, expected):
-        output_lineages = gflib.coalesce_lineages(input_lineages, to_join)
+        e = eventslib.CoalescenceEvent(0)
+        output_lineages = e.coalesce_lineages(input_lineages, to_join)
         assert sorted(output_lineages) == sorted(expected)
 
     @pytest.mark.parametrize(
@@ -251,16 +253,9 @@ class Test_matrix_aux:
         ],
     )
     def test_coalescence(self, sample_list, check):
-        # rate_array: [c0,c1,c2,M,E,m_1,m_2,m_3,m_4]
-        branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GfMatrixObject(
-            sample_list,
-            (0, 1, 2),
-            branchtype_dict,
-            exodus_rate=4,
-            exodus_direction=[(1, 2, 0)],
-        )
-        result = list(gfobj.coalescence_events(gfobj.sample_list))
+        ces = eventslib.CoalescenceEventsSuite(len(sample_list))
+        result = ces._single_step(sample_list)
+
         print("result:", result)
         print("check:", check)
         for test, truth in zip(result, check):
@@ -291,15 +286,8 @@ class Test_matrix_aux:
     )
     def test_coalescence_same_rates(self, sample_list, check):
         coalescence_rates = (0, 0, 1)
-        branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GfMatrixObject(
-            sample_list,
-            coalescence_rates,
-            branchtype_dict,
-            exodus_rate=4,
-            exodus_direction=[(1, 2, 0)],
-        )
-        result = list(gfobj.coalescence_events(gfobj.sample_list))
+        ces = eventslib.CoalescenceEventsSuite(len(sample_list), coalescence_rates)
+        result = ces._single_step(sample_list)
         print("result:", result)
         print("check:", check)
         for test, truth in zip(result, check):
@@ -333,15 +321,9 @@ class Test_matrix_aux:
         ],
     )
     def test_migration(self, sample_list, check):
-        branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GfMatrixObject(
-            sample_list,
-            (0, 1, 2),
-            branchtype_dict,
-            migration_rate=3,
-            migration_direction=[(1, 2)],
-        )
-        result = list(gfobj.migration_events(gfobj.sample_list))
+        migration_idx = 3
+        mige = eventslib.MigrationEvent(migration_idx, 0, 1)
+        result = mige._single_step(sample_list)
         print("result:", result)
         print("check:", check)
         for test, truth in zip(result, check):
@@ -349,45 +331,27 @@ class Test_matrix_aux:
 
     def test_migration_empty(self):
         sample_list = [(), (), ("c", "d")]
-        branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GfMatrixObject(
-            sample_list,
-            (0, 1, 2),
-            branchtype_dict,
-            migration_rate=3,
-            migration_direction=[(1, 2)],
-        )
-        result = list(gfobj.migration_events(gfobj.sample_list))
+        migration_idx = 3
+        mige = eventslib.MigrationEvent(migration_idx, 0, 1)
+        result = mige._single_step(sample_list)
         print("result:", result)
         assert isinstance(result, list)
         assert len(result) == 0
 
     def test_exodus_empty(self):
         sample_list = [(), (), ("c", "d")]
-        branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GfMatrixObject(
-            sample_list,
-            (0, 1, 2),
-            branchtype_dict,
-            exodus_rate=4,
-            exodus_direction=[(0, 1)],
-        )
-        result = list(gfobj.exodus_events(gfobj.sample_list))
+        split_idx = 4
+        pse = eventslib.PopulationSplitEvent(split_idx, 0, 1)
+        result = pse._single_step(sample_list)
         print("result:", result)
         assert isinstance(result, list)
         assert len(result) == 0
 
     def test_exodus(self):
         sample_list = [(), ("a", "a"), ("c", "d")]
-        branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GfMatrixObject(
-            sample_list,
-            (0, 1, 2),
-            branchtype_dict,
-            exodus_rate=4,
-            exodus_direction=[(1, 2, 0)],
-        )
-        result = list(gfobj.exodus_events(gfobj.sample_list))
+        split_idx = 4
+        pse = eventslib.PopulationSplitEvent(split_idx, 0, 1, 2)
+        result = pse._single_step(sample_list)
         check = [(4, 1, (("a", "a", "c", "d"), (), ()))]
         print("result:", result)
         print("check:", check)
@@ -399,8 +363,8 @@ class Test_matrix_aux:
 class Test_Simple_Models:
     def test_single_step(self):
         sample_list = [("a", "a", "b", "b")]
-        branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GfMatrixObject(sample_list, (0,), branchtype_dict)
+        branch_type_counter = mut.BranchTypeCounter(sample_list)
+        gfobj = gflib.GfMatrixObject(branch_type_counter)
         multiplier_array, new_state_list = gfobj.gf_single_step(sample_list)
         print("new_state_list:", new_state_list)
         print("multiplier_array:")
@@ -421,16 +385,9 @@ class Test_Simple_Models:
 
     def test_single_step_exodus(self):
         sample_list = [("a", "a", "b", "b"), ()]
-        branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GfMatrixObject(
-            sample_list,
-            (0, 1),
-            branchtype_dict,
-            exodus_rate=2,
-            exodus_direction=[
-                (0, 1),
-            ],
-        )
+        branch_type_counter = mut.BranchTypeCounter(sample_list)
+        event_list = [eventslib.PopulationSplitEvent(2, 1, 0),]
+        gfobj = gflib.GfMatrixObject(branch_type_counter, event_list)
         multiplier_array, new_state_list = gfobj.gf_single_step(sample_list)
         print("new_state_list:", new_state_list)
         print("multiplier_array:")
@@ -453,16 +410,9 @@ class Test_Simple_Models:
 
     def test_single_step_exodus2(self):
         sample_list = [("a", "a"), ("b", "b")]
-        branchtype_dict = mut.make_branchtype_dict_idxs(sample_list)
-        gfobj = gflib.GfMatrixObject(
-            sample_list,
-            (0, 1),
-            branchtype_dict,
-            exodus_rate=2,
-            exodus_direction=[
-                (0, 1),
-            ],
-        )
+        branch_type_counter = mut.BranchTypeCounter(sample_list)
+        event_list = [eventslib.PopulationSplitEvent(2, 1, 0)]
+        gfobj = gflib.GfMatrixObject(branch_type_counter, event_list)
         multiplier_array, new_state_list = gfobj.gf_single_step(sample_list)
         print("new_state_list:", new_state_list)
         print("multiplier_array:")
@@ -524,6 +474,7 @@ class Test_Paths:
         mutype_labels, max_k = zip(*sorted(k_max.items()))
         # branchtype_dict_mat = mut.make_branchtype_dict_idxs(sample_list, mapping='unrooted', labels=mutype_labels)
         branchtype_dict_mat = gfdev.make_branchtype_dict_idxs_gimble()
+        branch_type_counter = mut.BranchTypeCounter(sample_list, branchtype_dict=branchtype_dict_mat)
         branchtype_dict_chain = smut.make_branchtype_dict(
             sample_list, mapping="unrooted", labels=mutype_labels
         )
@@ -534,26 +485,31 @@ class Test_Paths:
             migration_rate,
         ) = request.param
 
+        event_list = []
         variables_array = list(coalescence_rates)
         migration_rate_idx, exodus_rate_idx = None, None
         if migration_rate is not None:
             migration_rate_idx = len(variables_array)
             variables_array.append(migration_rate)
+            event_list.append(eventslib.MigrationEvent(migration_rate_idx, *migration_direction[0]))
         if exodus_rate is not None:
             exodus_rate_idx = len(variables_array)
             variables_array.append(exodus_rate)
+            *derived, ancestral = exodus_direction[0]
+            event_list.append(eventslib.PopulationSplitEvent(exodus_rate_idx, ancestral, *derived))
         variables_array += [sage.all.SR.var(m) for m in mutype_labels]
         variables_array = np.array(variables_array, dtype=object)
 
-        gfobj = gflib.GfMatrixObject(
-            sample_list,
-            coalescence_rate_idxs,
-            branchtype_dict_mat,
-            exodus_rate=exodus_rate_idx,
-            exodus_direction=exodus_direction,
-            migration_rate=migration_rate_idx,
-            migration_direction=migration_direction,
-        )
+        gfobj = gflib.GfMatrixObject(branch_type_counter, event_list)
+        #gfobj = gflib.GfMatrixObject(
+        #    branch_type_counter,
+        #    coalescence_rate_idxs,
+        #    branchtype_dict_mat,
+        #    exodus_rate=exodus_rate_idx,
+        #    exodus_direction=exodus_direction,
+        #    migration_rate=migration_rate_idx,
+        #    migration_direction=migration_direction,
+        #)
         gf_mat = list(gfobj.make_gf())
 
         gfobj2 = gflib.GfObject(
