@@ -5,6 +5,8 @@
 ###############################################################################
 author = 'Gertjan Bisschop'
 autodoc_member_order = 'bysource'
+bibtex_bibfiles = ['references.bib']
+bibtex_reference_style = 'author_year'
 comments_config = {'hypothesis': False, 'utterances': False}
 copyright = '2022'
 exclude_patterns = ['**.ipynb_checkpoints', '.DS_Store', 'Thumbs.db', '_build']
@@ -12,7 +14,7 @@ execution_allow_errors = False
 execution_excludepatterns = []
 execution_in_temp = False
 execution_timeout = 30
-extensions = ['sphinx_togglebutton', 'sphinx_copybutton', 'myst_nb', 'jupyter_book', 'sphinx_thebe', 'sphinx_comments', 'sphinx_external_toc', 'sphinx.ext.intersphinx', 'sphinx_panels', 'sphinx_book_theme', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx_jupyterbook_latex']
+extensions = ['sphinx_togglebutton', 'sphinx_copybutton', 'myst_nb', 'jupyter_book', 'sphinx_thebe', 'sphinx_comments', 'sphinx_external_toc', 'sphinx.ext.intersphinx', 'sphinx_panels', 'sphinx_book_theme', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinxcontrib.bibtex', 'sphinx_jupyterbook_latex']
 external_toc_exclude_missing = True
 external_toc_path = '_toc.yml'
 html_baseurl = ''
@@ -26,7 +28,7 @@ jupyter_cache = ''
 jupyter_execute_notebooks = 'auto'
 language = None
 latex_engine = 'pdflatex'
-myst_enable_extensions = ['colon_fence', 'deflist']
+myst_enable_extensions = ['colon_fence', 'deflist', 'dollarmath']
 myst_url_schemes = ['mailto', 'http', 'https']
 nb_output_stderr = 'show'
 nitpicky = True
