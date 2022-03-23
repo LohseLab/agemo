@@ -11,6 +11,7 @@ import agemo.gflib as gflib
 import agemo.diff as gfdiff
 import agemo.mutations as gfmuts
 import agemo.evaluate as gfeval
+import agemo.events as eventslib
 import agemo.legacy.inverse as linverse
 import agemo.legacy.mutations as smuts
 import tests.gfdev as gfdev
@@ -339,7 +340,7 @@ class Test_collapse_graph:
     def test_collapse_graph(self):
         graph_array = ((1, 2, 4, 5), (2,), (3,), (6,), (3,), (3,), tuple())
         eq_matrix = np.array(
-            [[[0, 0], [0, 1]], [[0, 1], [0, 1]], [[0, 0], [0, 0]]],
+            [[[0, 0, 0], [0, 0, 1]], [[0, 0, 1], [0, 0, 1]], [[0, 0, 0], [0, 0, 0]]],
             dtype=np.uint8,
         )
         adjacency_matrix = np.full(
@@ -351,17 +352,10 @@ class Test_collapse_graph:
             np.array([0, 0, 3, 4, 5]), np.array([4, 5, 6, 3, 3])
         ] = 2
         sample_list = [("a", "a"), ("b", "b")]
-        coalescence_rates = (0, 1)
-        branchtype_dict = {}
-        exodus_rate = 1
-        exodus_direction = [(1, 0)]
-        gfObj = gflib.GfMatrixObject(
-            sample_list,
-            coalescence_rates,
-            branchtype_dict,
-            exodus_rate=exodus_rate,
-            exodus_direction=exodus_direction,
-        )
+        btc = gfmuts.BranchTypeCounter(sample_list)
+        pse = eventslib.PopulationSplitEvent(2, 0, 1)
+        gfObj = gflib.GfMatrixObject(btc, [pse, ])
+        
         (
             collapsed_graph_array,
             adjacency_matrix_b,
@@ -392,22 +386,19 @@ class Test_collapse_graph:
         assert np.array_equal(expected_to_invert_array, to_invert_array)
 
     @pytest.mark.parametrize(
-        "sample_list, k_max, branchtype_dict, exp_graph_array",
+        "sample_list, exp_graph_array",
         [
-            ([(), ("a", "a")], {"m_1": 2}, {"a": 0}, [(1, 3), (2,), (), ()]),
+            ([(), ("a", "a")], [(1, 3), (2,), (), ()]),
             (
                 [(), ("a", "a", "a")],
-                {"m_1": 2, "m_2": 2},
-                {"a": 0, "aa": 1},
                 [(1, 4, 5), (2,), (3,), (), (3,), ()],
             ),
         ],
     )
     def test_graph_with_multiple_endpoints(
-        self, sample_list, k_max, branchtype_dict, exp_graph_array
+        self, sample_list, exp_graph_array
     ):
-        gfobj = self.get_gf_no_mutations(sample_list, k_max, branchtype_dict)
-        # delta_idx = gfobj.exodus_rate
+        gfobj = self.get_gf_no_mutations(sample_list)
         graph_array, adjacency_matrix, eq_matrix = gfobj.make_graph()
         collapsed_graph_array, *_ = gfobj.collapse_graph(
             graph_array, adjacency_matrix, eq_matrix
@@ -417,20 +408,10 @@ class Test_collapse_graph:
         for o, e in zip(collapsed_graph_array, exp_graph_array):
             assert o == e
 
-    def get_gf_no_mutations(self, sample_list, k_max, branchtype_dict):
-        coalescence_rate_idxs = (0, 1)
-        exodus_rate_idx = 2
-        exodus_direction = [
-            (1, 0),
-        ]
-        mutype_labels, max_k = zip(*sorted(k_max.items()))
-        gfobj = gflib.GfMatrixObject(
-            sample_list,
-            coalescence_rate_idxs,
-            branchtype_dict,
-            exodus_direction=exodus_direction,
-            exodus_rate=exodus_rate_idx,
-        )
+    def get_gf_no_mutations(self, sample_list):
+        pse = eventslib.PopulationSplitEvent(2, 0, 1)
+        btc = gfmuts.BranchTypeCounter(sample_list, rooted=True)
+        gfobj = gflib.GfMatrixObject(btc, [pse,])
         return gfobj
 
 
@@ -470,7 +451,7 @@ class Test_taylor_single_pop:
 
         print(result_with_marginals)
         exp_result = evaluate_symbolic_equation(
-            gfobj, ordered_mutype_list, max_k, theta, alt_variable_array, time
+            gfobj, ordered_mutype_list, max_k, theta, alt_variable_array, time, gfobj.discrete_events[0]
         )
         print(exp_result)
         assert np.allclose(exp_result, result_with_marginals)
@@ -483,22 +464,8 @@ class Test_taylor_single_pop:
         return gfmuts.MutationTypeCounter(btc, shape)
 
     def get_gf_no_mutations(self, btc):
-        # sample_list = [(), ('a',)*size]
-        coalescence_rate_idxs = (0, 1)
-        exodus_rate_idx = 2
-        exodus_direction = [
-            (1, 0),
-        ]
-        # k_max = {f'm_{idx}':2 for idx in range(1,size)}
-        # mutype_labels, max_k = zip(*sorted(k_max.items()))
-        # branchtype_dict_mat = {'a'*idx:idx-1 for idx in range(1,size)}
-        gfobj = gflib.GfMatrixObject(
-            btc.sample_configuration,
-            coalescence_rate_idxs,
-            btc.labels_dict,
-            exodus_direction=exodus_direction,
-            exodus_rate=exodus_rate_idx,
-        )
+        pse = eventslib.PopulationSplitEvent(2, 0, 1)
+        gfobj = gflib.GfMatrixObject(btc, [pse, ])
         return gfobj
 
 
@@ -537,7 +504,7 @@ class Test_taylorIM:
         scope="class",
         params=[
             (
-                [(1, 2, 0)],
+                (1, 2, 0),
                 True,
                 None,
                 None,
@@ -551,7 +518,7 @@ class Test_taylorIM:
             (
                 None,
                 None,
-                [(2, 1)],
+                (2, 1),
                 True,
                 [
                     312 / 625,
@@ -564,9 +531,9 @@ class Test_taylorIM:
                 "MIG_BA",
             ),
             (
-                [(1, 2, 0)],
+                (1, 2, 0),
                 True,
-                [(1, 2)],
+                (1, 2),
                 True,
                 [
                     72 / 125,
@@ -618,9 +585,9 @@ class Test_epsilon:
         scope="class",
         params=[
             (
-                [(1, 2, 0)],
+                (1, 2, 0),
                 True,
-                [(2, 1)],
+                (2, 1),
                 True,
                 [0.5, np.array([1.0, 0.2, 0.3, 0.4], dtype=np.float64), 1.5],
                 "IM_BA_zerodivision",
@@ -637,18 +604,18 @@ class Test_epsilon:
 
 
 def evaluate_symbolic_equation(
-    gfobj, ordered_mutype_list, max_k, theta, var, time, sage_inverse=False
+    gfobj, ordered_mutype_list, max_k, theta, var, time, delta_idx, sage_inverse=False
 ):
     theta = sage.all.Rational(theta)
     rate_dict = {b: theta for b in ordered_mutype_list}
     paths, eq_matrix = gfobj.make_gf()
     if not sage_inverse:
         alt_eqs = gfdev.equations_from_matrix_with_inverse(
-            eq_matrix, paths, var, time, gfobj.exodus_rate
+            eq_matrix, paths, var, time, delta_idx
         )
     else:
         alt_eqs = gfdev.equations_with_sage(
-            eq_matrix, paths, var, sage.all.Rational(time), gfobj.exodus_rate
+            eq_matrix, paths, var, sage.all.Rational(time), delta_idx
         )
     gf_alt = sum(alt_eqs)
     result = smuts.depth_first_mutypes(
@@ -670,23 +637,28 @@ def get_IM_gfobject_BT(params, btc):
         model,
     ) = params
 
+    events_list = []
     migration_rate_idx, exodus_rate_idx = None, None
     if migration_rate is not None:
-        migration_rate_idx = num_variables
+        mige = eventslib.MigrationEvent(num_variables, *migration_direction)
         num_variables += 1
+        events_list.append(mige)
     if exodus_rate is not None:
-        exodus_rate_idx = num_variables
+        *derived, ancestral = exodus_direction
+        pse = eventslib.PopulationSplitEvent(num_variables, ancestral, *derived)
         num_variables += 1
-
-    gfobj = gflib.GfMatrixObject(
-        btc.sample_configuration,
-        coalescence_rate_idxs,
-        btc.labels_dict,
-        exodus_rate=exodus_rate_idx,
-        exodus_direction=exodus_direction,
-        migration_rate=migration_rate_idx,
-        migration_direction=migration_direction,
-    )
+        events_list.append(pse)
+        
+    #gfobj = gflib.GfMatrixObject(
+    #    btc.sample_configuration,
+    #    coalescence_rate_idxs,
+    #    btc.labels_dict,
+    #    exodus_rate=exodus_rate_idx,
+    #    exodus_direction=exodus_direction,
+    #    migration_rate=migration_rate_idx,
+    #    migration_direction=migration_direction,
+    #)
+    gfobj = gflib.GfMatrixObject(btc, events_list)
 
     return gfobj, variable_array, model, btc
 
