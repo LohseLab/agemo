@@ -2,6 +2,7 @@ import collections
 import itertools
 import numpy as np
 
+import agemo.events as eventslib
 
 # auxilliary functions
 
@@ -304,46 +305,32 @@ class GfObjectChainRule(GfObject):
             ]
 
 
-class GfMatrixObject(GfObject):
+class GfMatrixObject:
     def __init__(
         self,
-        sample_list,
-        coalescence_rates,
-        branchtype_dict,
-        migration_direction=None,
-        migration_rate=None,
-        exodus_direction=None,
-        exodus_rate=None,
+        branch_type_counter,
+        events=None,
     ):
-        # generate coalescence_rate_idxs
-        # extract event idxs and assert all idxs together are all different 
-        # and increasing in value: 0 to num_events+coal
         
-        super().__init__(
-            sample_list,
-            coalescence_rates,
-            branchtype_dict,
-            migration_direction,
-            migration_rate,
-            exodus_direction,
-            exodus_rate,
-        )
-        assert all(
-            isinstance(coal_rate, int) for coal_rate in self.coalescence_rates
-        ), "Coalescence rates should be indices."
-        self.num_branchtypes = len(set(self.branchtype_dict.values()))
-        num_events = 0
-        if self.migration_rate is not None:
-            assert isinstance(
-                self.migration_rate, int
-            ), "Migration rate should be an integer index."
-            num_events += 1
-        if self.exodus_rate is not None:
-            num_events += 1
-            assert isinstance(
-                self.exodus_rate, int
-            ), "Exodus rate should be an integer index."
-        self.num_variables = max(coalescence_rates) + 1 + num_events
+        self.sample_list = branch_type_counter.sample_configuration
+        self.branchtype_dict = branch_type_counter.labels_dict
+        self.num_branchtypes = len(branch_type_counter)
+        if events is None:
+            events = []
+        self.optional_events = events
+
+        all_event_idxs, self.discrete_events = [], []
+        for event in events:
+            if event.discrete:
+                self.discrete_events.append(event.idx)
+            all_event_idxs.append(event.idx)
+        num_events = len(events)
+        num_coalescence_events = len(self.sample_list)
+        self.num_variables = num_coalescence_events + num_events
+        assert sorted(all_event_idxs)==list(range(num_coalescence_events, self.num_variables)), f"all event idxs should be unique and range between {num_coalescence_events} and {self.num_variables}."
+        
+        self.discrete_events = [event.idx for event in events if event.discrete]
+        self.coalescence_events = eventslib.CoalescenceEventsSuite(len(self.sample_list))
 
     def make_gf(self):
         stack = [
@@ -439,12 +426,16 @@ class GfMatrixObject(GfObject):
         return (graph_array, adjacency_matrix, np.concatenate(eq_list, axis=0))
 
     def collapse_graph(self, graph_array, adjacency_matrix, eq_matrix):
-        delta_idx = self.exodus_rate
-        if delta_idx is None:
+        num_discrete_events = len(self.discrete_events)
+        
+        if num_discrete_events==0:
             collapsed_graph_array = graph_array
             eq_array = tuple([(i,) for i in range(eq_matrix.shape[0])])
             to_invert_array = np.zeros(len(eq_array), dtype=bool)
         else:
+            if num_discrete_events>1:
+                raise NotImplementedError
+            delta_idx = self.discrete_events[0]
             root = 0
             visited = {root: 0}  # old_index, new_index
             stack = [(root, root, list())]
@@ -522,7 +513,15 @@ class GfMatrixObject(GfObject):
         )
 
     def equations_graph(self):
-        delta_idx = self.exodus_rate
+        num_discrete_events = len(self.discrete_events)
+        if num_discrete_events:
+            if num_discrete_events>1:
+                raise NotImplementedError
+            else:
+                delta_idx = self.discrete_events[0]
+        else:
+            delta_idx = None
+        
         stack = [
             (list(), self.sample_list, 0),
         ]
@@ -637,58 +636,12 @@ class GfMatrixObject(GfObject):
         )
         return (multiplier_array, new_state_list)
 
-    def coalescence_events(self, state_list):
-        result = []
-        for idx, (pop, rate_idx) in enumerate(
-            zip(state_list, self.coalescence_rates)
-        ):
-            for count, coal_event in coalesce_single_pop(pop):
-                modified_state_list = list(state_list)
-                modified_state_list[idx] = coal_event
-                result.append((rate_idx, count, tuple(modified_state_list)))
-        return result
-
-    def migration_events(self, state_list):
-        result = []
-        if self.migration_direction:
-            for source, destination in self.migration_direction:
-                lineage_count = collections.Counter(state_list[source])
-                for lineage, count in lineage_count.items():
-                    temp = list(state_list)
-                    idx = temp[source].index(lineage)
-                    temp[source] = tuple(
-                        temp[source][:idx] + temp[source][idx + 1 :]
-                    )
-                    temp[destination] = tuple(
-                        sorted(
-                            list(temp[destination])
-                            + [
-                                lineage,
-                            ]
-                        )
-                    )
-                    result.append((self.migration_rate, count, tuple(temp)))
-        return result
-
-    def exodus_events(self, state_list):
-        result = []
-        if self.exodus_direction:
-            for *source, destination in self.exodus_direction:
-                temp = list(state_list)
-                sources_joined = tuple(
-                    itertools.chain.from_iterable(
-                        [state_list[idx] for idx in source]
-                    )
-                )
-                if len(sources_joined) > 0:
-                    temp[destination] = tuple(
-                        sorted(state_list[destination] + sources_joined)
-                    )
-                    for idx in source:
-                        temp[idx] = ()
-                    result.append((self.exodus_rate, 1, tuple(temp)))
-        return result
-
+    def rates_and_events(self, state_list):
+        all_events = []
+        all_events += self.coalescence_events._single_step(state_list)
+        for event in self.optional_events:
+            all_events += event._single_step(state_list)
+        return all_events
 
 def eq_dict_to_adjacency_matrix(equation_dict, max_idx, max_value):
     dtype = np.min_scalar_type(max_value + 1)

@@ -11,9 +11,20 @@ from agemo.evaluate import (
 	BSFSEvaluator
 	)
 
+from agemo.events import (
+	MigrationEvent,
+	PopulationSplitEvent,
+	CoalescenceEvent,
+	CoalescenceEventsSuite
+	)
+
 __all__ = [
 	"GfMatrixObject",
 	"BranchTypeCounter",
 	"MutationTypeCounter",
 	"BSFSEvaluator",
+	"MigrationEvent",
+	"PopulationSplitEvent",
+	"CoalescenceEvent",
+	"CoalescenceEventsSuite",
 ]

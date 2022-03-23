@@ -93,7 +93,14 @@ class BSFSEvaluator:
     def __init__(self, gfObj, MutationTypeCounter):
         if MutationTypeCounter.phased:
             raise NotImplementedError('Calculating the bSFS for the fully phased case is still under development.')
-        delta_idx = gfObj.exodus_rate  # what value if None
+        num_discrete_events = len(gfObj.discrete_events) 
+        if num_discrete_events==0:
+            delta_idx = None
+        elif num_discrete_events==1:
+            delta_idx = gfObj.discrete_events[0]
+        else:
+            raise NotImplementedError('BSFSEvaluator can only deal with 1 discrete event.')
+        
         # only works with single delta_idx!
         (
             self.eq_graph_array,
