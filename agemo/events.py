@@ -2,6 +2,18 @@ import collections
 import itertools
 
 class Event:
+    """
+    Super class for all events. Note that all events require an index.
+    This unique integer tells both `agemo` and the user at which position 
+    in the variable and equation array the coefficients for this event
+    will be stored.
+
+    :param idx: Index of variable in variable and equation array.
+    :type idx: int
+    :param discrete: indicates whether an event is discrete or continuous.
+    :type discrete: boolean
+    """
+
     def __init__(self, idx, discrete, **kwargs):
         self.idx = idx
         self._discrete = discrete
@@ -22,11 +34,14 @@ class MigrationEvent(Event):
     in time. Effect: at each step in the state space a single lineage can
     move from source to destination.
 
-    :param int idx: Index of variable in variable array.
-    :param int source: Integer representing the index of the population, 
+    :param idx: Index of variable in variable and equation array.
+    :type idx: int
+    :param source: Integer representing the index of the population, 
     as defined in `sample_configuration` acting as source.
+    :type source: int
     :param int destination: Integer representing the index of the population,
     as defined in `sample_configuration` acting as destination.
+    :type destination: int
     """
     def __init__(self, idx, source, destination):
         super().__init__(
@@ -64,11 +79,14 @@ class PopulationSplitEvent(Event):
     moved from the derived population(s) into the ancestral population
     backwards in time.
 
-    :param int idx: Index of variable in variable array. 
+    :param idx: Index of variable in variable and equation array. 
+    :type idx: int
     :param int ancestral: Integer of population, as specified in `sample_configuration`, 
     representing the ancestral population.
-    :param int derived: One or more integers representing
+    :type ancestral: int
+    :param derived: One or more integers representing
     index/indices of derived populations as specified in `sample_configuration`.
+    :type derived: int
     """
     def __init__(self, idx, ancestral, *derived):
         super().__init__(
@@ -100,6 +118,9 @@ class CoalescenceEvent(Event):
     """
     Describing all coalescence events among the lineages as defined in
     `sample_configuration`.
+
+    :param idx: Index of variable in variable and equation array.
+    :type idx: int   
     """
 
     def __init__(self, idx):
@@ -142,6 +163,15 @@ class EventsSuite:
         raise NotImplementedError
 
 class CoalescenceEventsSuite(EventsSuite):
+    """
+    Class groups all coalescence events for a particular model.
+
+    :param num_coalescence_events: Number of populations in your `sample_configuration`
+    :type num_coalescence_events: int
+    :param idxs: List of indices for each of the coalescence events, defaults to None.
+        Should be of length `num_coalescence_events`
+    :type idxs: list(int)
+    """
     def __init__(self, num_coalescence_events, idxs=None):
         if idxs is None:
             coalescence_events = [CoalescenceEvent(i) for i in range(num_coalescence_events)]
