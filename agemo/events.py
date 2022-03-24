@@ -12,6 +12,7 @@ class Event:
     :type idx: int
     :param discrete: indicates whether an event is discrete or continuous.
     :type discrete: boolean
+    
     """
 
     def __init__(self, idx, discrete, **kwargs):
@@ -37,11 +38,12 @@ class MigrationEvent(Event):
     :param idx: Index of variable in variable and equation array.
     :type idx: int
     :param source: Integer representing the index of the population, 
-    as defined in `sample_configuration` acting as source.
+        as defined in `sample_configuration` acting as source.
     :type source: int
     :param int destination: Integer representing the index of the population,
-    as defined in `sample_configuration` acting as destination.
+        as defined in `sample_configuration` acting as destination.
     :type destination: int
+
     """
     def __init__(self, idx, source, destination):
         super().__init__(
@@ -82,11 +84,12 @@ class PopulationSplitEvent(Event):
     :param idx: Index of variable in variable and equation array. 
     :type idx: int
     :param int ancestral: Integer of population, as specified in `sample_configuration`, 
-    representing the ancestral population.
+        representing the ancestral population.
     :type ancestral: int
     :param derived: One or more integers representing
-    index/indices of derived populations as specified in `sample_configuration`.
+        index/indices of derived populations as specified in `sample_configuration`.
     :type derived: int
+    
     """
     def __init__(self, idx, ancestral, *derived):
         super().__init__(
@@ -121,6 +124,7 @@ class CoalescenceEvent(Event):
 
     :param idx: Index of variable in variable and equation array.
     :type idx: int   
+    
     """
 
     def __init__(self, idx):
@@ -132,6 +136,7 @@ class CoalescenceEvent(Event):
     def coalesce_lineages(self, input_tuple, to_join):
         """
         Joins lineages and returns resulting tuple of lineages for a single pop
+        
         """
         result = list(input_tuple)
         for lineage in to_join:
@@ -145,6 +150,7 @@ class CoalescenceEvent(Event):
         For single population generate all possible coalescence events
         param: iterable pop_state: containing all lineages (str) present within pop
         param: float, object coal_rate: rate at which coalescence happens in that pop
+        
         """
         coal_event_pairs = list(itertools.combinations(pop_state, 2))
         coal_counts = collections.Counter(coal_event_pairs)
@@ -171,6 +177,7 @@ class CoalescenceEventsSuite(EventsSuite):
     :param idxs: List of indices for each of the coalescence events, defaults to None.
         Should be of length `num_coalescence_events`
     :type idxs: list(int)
+    
     """
     def __init__(self, num_coalescence_events, idxs=None):
         if idxs is None:
@@ -194,5 +201,6 @@ def flatten(input_list):
     """
     Flattens iterable from depth n to depth n-1
     :param list input_list: iterable that will be flattened.
+    
     """
     return itertools.chain.from_iterable(input_list)
