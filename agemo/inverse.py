@@ -1,9 +1,7 @@
 import numpy as np
 
 
-def inverse_laplace_single_event(
-    multiplier_array, var_array, time, delta_in_nom_list
-):
+def inverse_laplace_single_event(multiplier_array, var_array, time, delta_in_nom_list):
     """
     Inverse laplace of (F/delta, delta, time) when there are no higher order poles
     potential issue 1: equality of two constants in the denominator:
@@ -38,10 +36,8 @@ def inverse_laplace_single_event(
         constants_nom, initial=1, where=constants_nom != 0, axis=-1
     )
     if any(d == 0 for d in denominators):  # any of denominators entries 0:
-        raise ValueError(
-            "Inverse Laplace runs into zero values in denominator."
-        )
-        #EXCEPTION -> this means there is a higher order pole, can be solved with pfe!
+        raise ValueError("Inverse Laplace runs into zero values in denominator.")
+        # EXCEPTION -> this means there is a higher order pole, can be solved with pfe!
         # poles, multiplicities = np.unique(constants_denom, return_counts=True)
         # if not any(delta_in_nom_list): #no delta in nominator
         # 	poles = np.hstack((poles, 0.0))

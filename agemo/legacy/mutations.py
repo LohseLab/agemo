@@ -31,9 +31,7 @@ def make_result_dict_from_mutype_tree_alt(
         parent, parent_equation = stack.pop()
         if parent in mutype_tree:
             for child in mutype_tree[parent]:
-                mucounts = [
-                    m for m, max_k_m in zip(child, max_k) if m <= max_k_m
-                ]
+                mucounts = [m for m, max_k_m in zip(child, max_k) if m <= max_k_m]
                 marginal = len(mucounts) < num_mutypes
                 child_equation = generate_equation(
                     parent_equation,
@@ -50,15 +48,11 @@ def make_result_dict_from_mutype_tree_alt(
     return result
 
 
-def generate_equation(
-    equation, parent, node, max_k, ordered_mutype_list, marginal
-):
+def generate_equation(equation, parent, node, max_k, ordered_mutype_list, marginal):
     if marginal:
         marginals = {
             branchtype: 0
-            for branchtype, count, max_k_m in zip(
-                ordered_mutype_list, node, max_k
-            )
+            for branchtype, count, max_k_m in zip(ordered_mutype_list, node, max_k)
             if count > max_k_m
         }
         return equation.subs(marginals)
@@ -76,9 +70,7 @@ def eval_equation(derivative, theta, ratedict, numeric_mucounts, precision):
     )
     # mucount_fact_prod = np.prod(factorials[numeric_mucounts])
     return sage.all.RealField(precision)(
-        (-1 * theta) ** (mucount_total)
-        / mucount_fact_prod
-        * derivative.subs(ratedict)
+        (-1 * theta) ** (mucount_total) / mucount_fact_prod * derivative.subs(ratedict)
     )
 
 
@@ -107,15 +99,9 @@ def depth_first_mutypes(
                 mutype, labels[k], k, max_k[k], eq, theta, exclude
             ):
                 mucounts = np.array(
-                    [
-                        m
-                        for m, max_k_m in zip(new_mutype, max_k)
-                        if m <= max_k_m
-                    ]
+                    [m for m, max_k_m in zip(new_mutype, max_k) if m <= max_k_m]
                 )
-                temp = eval_equation(
-                    new_eq, theta, rate_dict, mucounts, precision
-                )
+                temp = eval_equation(new_eq, theta, rate_dict, mucounts, precision)
                 # temp = eval_equation(new_eq, theta, rate_dict, mucounts, factorials, precision)
                 result[new_mutype] = temp
                 # result[mutype] = eval_equation(eq, theta, rate_dict, mucounts, precision)
@@ -183,9 +169,7 @@ def make_branchtype_dict(sample_list, mapping="unrooted", labels=None):
                 branchtype: sage.all.SR.var(f"z_{branchtype}")
                 for branchtype in branches
             }
-    elif (
-        mapping == "unrooted"
-    ):  # this needs to be extended to the general thing!
+    elif mapping == "unrooted":  # this needs to be extended to the general thing!
         if not labels:
             labels = ["m_1", "m_2", "m_3", "m_4"]
         assert set(all_branchtypes) == {"a", "b"}
@@ -194,17 +178,11 @@ def make_branchtype_dict(sample_list, mapping="unrooted", labels=None):
             if len(branchtype) == 0 or len(branchtype) == len(all_branchtypes):
                 pass
             elif branchtype in ("abb", "a"):
-                branchtype_dict[branchtype] = sage.all.SR.var(
-                    labels[1]
-                )  # hetA
+                branchtype_dict[branchtype] = sage.all.SR.var(labels[1])  # hetA
             elif branchtype in ("aab", "b"):
-                branchtype_dict[branchtype] = sage.all.SR.var(
-                    labels[0]
-                )  # hetB
+                branchtype_dict[branchtype] = sage.all.SR.var(labels[0])  # hetB
             elif branchtype == "ab":
-                branchtype_dict[branchtype] = sage.all.SR.var(
-                    labels[2]
-                )  # hetAB
+                branchtype_dict[branchtype] = sage.all.SR.var(labels[2])  # hetAB
             else:
                 branchtype_dict[branchtype] = sage.all.SR.var(
                     labels[3]

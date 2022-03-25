@@ -72,9 +72,7 @@ class GfEvaluator:
         self.gf = gf
         self.max_k = np.array(max_k)
         self.ETPs_shape = tuple(k + 2 for k in max_k)
-        self.ordered_mutype_list = [
-            sage.all.SR.var(mutype) for mutype in mutypes
-        ]
+        self.ordered_mutype_list = [sage.all.SR.var(mutype) for mutype in mutypes]
         if restrict_to is not None:
             self.restricted = True
             all_mutation_configurations = mutations.add_marginals_restrict_to(
@@ -82,9 +80,7 @@ class GfEvaluator:
             )
         else:
             self.restricted = False
-            all_mutation_configurations = mutations.return_mutype_configs(
-                max_k
-            )
+            all_mutation_configurations = mutations.return_mutype_configs(max_k)
         if exclude is not None:
             all_mutation_configurations = [
                 m
@@ -117,9 +113,7 @@ class GfEvaluator:
         return gf
 
     def evaluate_gf(self, parameter_dict, theta, epsilon=0.0001):
-        rate_dict = {
-            branchtype: theta for branchtype in self.ordered_mutype_list
-        }
+        rate_dict = {branchtype: theta for branchtype in self.ordered_mutype_list}
         gf = self._subs_params(parameter_dict, epsilon)
         ETPs = smut.make_result_dict_from_mutype_tree_alt(
             gf,

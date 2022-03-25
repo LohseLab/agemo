@@ -22,8 +22,7 @@ def make_mutype_tree_single_digit(all_mutypes, root, max_k):
         else:
             if any(m > max_k_m for m, max_k_m in zip(mutype, max_k)):
                 root_config = tuple(
-                    m if m <= max_k_m else 0
-                    for m, max_k_m in zip(mutype, max_k)
+                    m if m <= max_k_m else 0 for m, max_k_m in zip(mutype, max_k)
                 )
                 result[root_config].append(mutype)
             else:
@@ -40,8 +39,7 @@ def make_mutype_tree(all_mutypes, root, max_k):
         else:
             if any(m > max_k_m for m, max_k_m in zip(mutype, max_k)):
                 root_config = tuple(
-                    m if m <= max_k_m else 0
-                    for m, max_k_m in zip(mutype, max_k)
+                    m if m <= max_k_m else 0 for m, max_k_m in zip(mutype, max_k)
                 )
                 result[root_config].append(mutype)
             else:
@@ -90,16 +88,14 @@ def list_marginal_idxs(marginal, max_k):
 
 def add_marginals_restrict_to(restrict_to, max_k):
     marginal_np = np.array(restrict_to, dtype=np.uint8)
-    marginal_mutypes_idxs = np.argwhere(
-        np.any(marginal_np > max_k, axis=1)
-    ).reshape(-1)
+    marginal_mutypes_idxs = np.argwhere(np.any(marginal_np > max_k, axis=1)).reshape(-1)
     if marginal_mutypes_idxs.size > 0:
         result = []
         # for mut_config_idx in marginal_mutypes_idxs:
-        # 	print(marginal_np[mut_config_idx])
-        # 	temp = list_marginal_idxs(marginal_np[mut_config_idx], max_k)
-        # 	result.append(temp)
-        # 	print(temp)
+        #   print(marginal_np[mut_config_idx])
+        #   temp = list_marginal_idxs(marginal_np[mut_config_idx], max_k)
+        #   result.append(temp)
+        #   print(temp)
         result = [
             list_marginal_idxs(marginal_np[mut_config_idx], max_k)
             for mut_config_idx in marginal_mutypes_idxs
@@ -175,12 +171,7 @@ def make_branchtype_dict_idxs(
             flatten(
                 [
                     sorted(
-                        set(
-                            [
-                                "".join(p)
-                                for p in itertools.combinations(samples, i)
-                            ]
-                        )
+                        set(["".join(p) for p in itertools.combinations(samples, i)])
                     )
                     for i in range(1, len(samples))
                 ]
@@ -204,9 +195,7 @@ def get_binary_branchtype_array_all(num_samples, phased=False, rooted=False):
     if phased:
         bta = get_binary_branchtype_array(sum(num_samples))  # should be int
     else:
-        bta = get_binary_branchtype_array_unphased(
-            num_samples
-        )  # should be tuple
+        bta = get_binary_branchtype_array_unphased(num_samples)  # should be tuple
     if not rooted:
         return bta[: math.ceil(bta.shape[0] / 2)]
     return bta
@@ -283,9 +272,7 @@ def get_binary_branchtype_array_unphased(num_samples_per_pop):
         for idx, pop in enumerate(config):
             temp += [1] * pop + [0] * (num_samples_per_pop[idx] - pop)
         result.append(tuple(temp))
-    return np.array(result, dtype=np.uint8)[
-        :, : (total_num_samples - correction)
-    ]
+    return np.array(result, dtype=np.uint8)[:, : (total_num_samples - correction)]
 
 
 # testing branchtype compatibility
@@ -329,6 +316,7 @@ def compatibility_depth_first(compatibility_check, size):
 
     return possible
 
+
 def all_within_deme_permutations(b, slices=None):
     if slices is None:
         slices = np.array([])
@@ -344,7 +332,7 @@ def all_permutations(*b):
 
 def single_permutation_2d(b):
     dim = b.shape[-1]
-    if len(np.unique(b))==1:
+    if len(np.unique(b)) == 1:
         yield b
         return
     else:
@@ -352,19 +340,23 @@ def single_permutation_2d(b):
             yield b[:, np.array(ordering)]
 
 
-def equivalences_single_mutype(mutype, mutype_shape, stack_to_idx, branchtype_array, slices):
+def equivalences_single_mutype(
+    mutype, mutype_shape, stack_to_idx, branchtype_array, slices
+):
     num_mutypes = len(mutype_shape)
     non_zero_idx_base = np.flatnonzero(mutype)
     stacked_repr = branchtype_array[non_zero_idx_base]
     all_permutations = list(all_within_deme_permutations(stacked_repr, slices))
     mutations_to_distribute = np.array(mutype_shape)[non_zero_idx_base]
-    non_zero_idxs_equivalent = np.zeros((len(all_permutations) - 1, len(mutations_to_distribute)), dtype=int)
-    
-    for pidx in range(len(all_permutations) - 1): 
-        dec_repr = binary_to_decimal(all_permutations[pidx+1])
+    non_zero_idxs_equivalent = np.zeros(
+        (len(all_permutations) - 1, len(mutations_to_distribute)), dtype=int
+    )
+
+    for pidx in range(len(all_permutations) - 1):
+        dec_repr = binary_to_decimal(all_permutations[pidx + 1])
         non_zero_idxs_equivalent[pidx] = [stack_to_idx[dec] for dec in dec_repr]
-        
-    for d in itertools.product(*(range(1,a) for a in mutations_to_distribute)):       
+
+    for d in itertools.product(*(range(1, a) for a in mutations_to_distribute)):
         result = np.zeros(num_mutypes, dtype=int)
         result[non_zero_idx_base] = d
         base_mutype = tuple(result)
@@ -422,6 +414,26 @@ class TypeCounter:
 
 
 class BranchTypeCounter(TypeCounter):
+    """
+    Collects all information on the branch types possible given the `sample_configuration`.
+
+    :param sample_configuration: Should contain a list or tuple for each of the populations involved in the
+        coalescent history of the sample, even those that do not contain any lineages at the time of sampling.
+        Example: `[(,),("a", "a"), ("b", "b")]`.
+    :type sample_configuration: list(list(str))
+    :param phased: Indicates whether we can distinguish samples within the same population, defaults to False.
+        When False, all samples within the same population get the same identifier. Ideally,
+        the `sample_configuration` as provided would already be simplified accordingly.
+    :type phased: boolean
+    :param rooted: Indicates whether branch types should be rooted, defaults to False
+    :type rooted: boolean
+    :param branchtype_dict: Mapping of all branchtypes to an integer index. Changes the order
+        of the coefficients within the equation matrix for each of the branch types,
+        defaults to `None`
+    :type branchtype_dict: dict, optional
+
+    """
+
     def __init__(
         self,
         sample_configuration,
@@ -430,19 +442,13 @@ class BranchTypeCounter(TypeCounter):
         branchtype_dict=None,
     ):
         self._sample_configuration = sample_configuration
-        self._samples_per_pop = tuple(
-            (len(pop) for pop in sample_configuration)
-        )
+        self._samples_per_pop = tuple((len(pop) for pop in sample_configuration))
         self._labels, self._labels_dict = self._set_labels(phased, rooted)
         self._binary_representation = get_binary_branchtype_array_all(
             self._samples_per_pop, phased, rooted
         )
-        self._custom_mapping = self.custom_branchtype_dict_mapping(
-            branchtype_dict
-        )
-        self._compatibility_check = branchtype_compatibility(
-            self.binary_representation
-        )
+        self._custom_mapping = self.custom_branchtype_dict_mapping(branchtype_dict)
+        self._compatibility_check = branchtype_compatibility(self.binary_representation)
         self._phased, self._rooted = phased, rooted
 
     @property
@@ -468,9 +474,9 @@ class BranchTypeCounter(TypeCounter):
         max_value = max(custom_values_set)
         assert max_value == len(custom_values_set) - 1
         assert min(custom_values_set) == 0
-        #sorted_branchtype_array = sorted(
+        # sorted_branchtype_array = sorted(
         #    branchtype_dict, key=lambda k: branchtype_dict[k]
-        #)
+        # )
         self._labels_dict = {k: v for k, v in branchtype_dict.items()}
         temp_labels = ["" for _ in range(len(self._labels))]
         for branchtype in self._labels:
@@ -483,18 +489,13 @@ class BranchTypeCounter(TypeCounter):
     def _set_labels(self, phased, rooted, starting_index=0):
         # sample_list, phased=False, rooted=False, starting_index=0
         samples = sorted(
-            gflib.flatten(
-                pop for pop in self.sample_configuration if len(pop) > 0
-            )
+            gflib.flatten(pop for pop in self.sample_configuration if len(pop) > 0)
         )
         if phased:
             all_branchtypes = list(
                 flatten(
                     [
-                        [
-                            "".join(p)
-                            for p in itertools.combinations(samples, i)
-                        ]
+                        ["".join(p) for p in itertools.combinations(samples, i)]
                         for i in range(1, len(samples))
                     ]
                 )
@@ -505,10 +506,7 @@ class BranchTypeCounter(TypeCounter):
                     [
                         sorted(
                             set(
-                                [
-                                    "".join(p)
-                                    for p in itertools.combinations(samples, i)
-                                ]
+                                ["".join(p) for p in itertools.combinations(samples, i)]
                             )
                         )
                         for i in range(1, len(samples))
@@ -532,6 +530,19 @@ class BranchTypeCounter(TypeCounter):
 
 
 class MutationTypeCounter(TypeCounter):
+    """
+    Collects all the information on all possible mutation types given a set of branch types.
+
+    :param branch_types: All branchtypes for a given sample set.
+    :type branch_types: class `agemo.BranchTypeCounter`
+    :param mutype_shape: Tuple of integers of length equal to the number of different branch types.
+        Provides the shape for the bSFS. In that case, the shape equates to k_{max} + 2. Here
+        k_{max} indicates the maximum number of mutations along each of the branch types for which
+        we want to calculate the likelihood.
+    :type mutype_shape: tuple(int)
+
+    """
+
     def __init__(self, BranchTypeCounter, mutype_shape):
         compatibility_check = branchtype_compatibility(
             BranchTypeCounter.binary_representation
@@ -550,11 +561,16 @@ class MutationTypeCounter(TypeCounter):
 
         self._BranchTypeCounter = BranchTypeCounter
         self._mutype_shape = mutype_shape
-        self._all_mutypes, self._all_mutypes_ravel = self.generate_and_sort_all_mutypes()
-        
-        self._equiprobable_mutypes_ravel = None #array if BranchTypeCounter.phased
-        self._equiprobable_to_base_mutype = None #dict if BranchTypeCounter.phased
-        self._sample_slicing = np.cumsum([i for i in self._BranchTypeCounter._samples_per_pop if i!=0])[:-1]
+        (
+            self._all_mutypes,
+            self._all_mutypes_ravel,
+        ) = self.generate_and_sort_all_mutypes()
+
+        self._equiprobable_mutypes_ravel = None  # array if BranchTypeCounter.phased
+        self._equiprobable_to_base_mutype = None  # dict if BranchTypeCounter.phased
+        self._sample_slicing = np.cumsum(
+            [i for i in self._BranchTypeCounter._samples_per_pop if i != 0]
+        )[:-1]
 
     @property
     def mutype_shape(self):
@@ -575,7 +591,7 @@ class MutationTypeCounter(TypeCounter):
     @property
     def BranchTypeCounter(self):
         return self._BranchTypeCounter
-    
+
     @property
     def sample_configuration(self):
         return self._BranchTypeCounter._sample_configuration
@@ -587,7 +603,7 @@ class MutationTypeCounter(TypeCounter):
     @property
     def labels(self):
         return self._BranchTypeCounter._labels
-    
+
     @property
     def labels_dict(self):
         return self._BranchTypeCounter._labels_dict
@@ -626,9 +642,13 @@ class MutationTypeCounter(TypeCounter):
             ravel_idxs[ravel_idxs_to_sort],
         )
 
-
     def generate_and_sort_all_mutypes_phased(self):
-        stack_to_idx = {dec:idx for idx, dec in  enumerate(binary_to_decimal(self.BranchTypeCounter.binary_representation))}
+        stack_to_idx = {
+            dec: idx
+            for idx, dec in enumerate(
+                binary_to_decimal(self.BranchTypeCounter.binary_representation)
+            )
+        }
         self._equiprobable_to_base_mutype = {}
         ravel_idxs, all_mutypes_unsorted = [], []
         for mutype in self._binary_representation:
@@ -636,19 +656,26 @@ class MutationTypeCounter(TypeCounter):
             if ravel_mutype not in self._equiprobable_mutypes_ravel:
                 equivalent_mutype_list = []
                 for base_mutype, equivalent_mutype in equivalences_single_mutype(
-                                                mutype, 
-                                                self.mutype_shape, 
-                                                stack_to_idx, 
-                                                self.BranchTypeCounter.binary_representation, 
-                                                self._sample_slicing):
-                    
-                    base_mutype_ravel = multi_index_ravel(base_mutype, self.mutype_shape)
-                    self._equiprobable_to_base_mutype[multi_index_ravel(equivalent_mutype, self.mutype_shape)] = base_mutype_ravel
+                    mutype,
+                    self.mutype_shape,
+                    stack_to_idx,
+                    self.BranchTypeCounter.binary_representation,
+                    self._sample_slicing,
+                ):
+
+                    base_mutype_ravel = multi_index_ravel(
+                        base_mutype, self.mutype_shape
+                    )
+                    self._equiprobable_to_base_mutype[
+                        multi_index_ravel(equivalent_mutype, self.mutype_shape)
+                    ] = base_mutype_ravel
                     ravel_idxs.append(base_mutype_ravel)
                     all_mutypes_unsorted.append(base_mutype)
                     equivalent_mutype_list.append(equivalent_mutype_ravel)
 
-            self._equiprobable_mutypes_ravel.append(numpy.array(equivalent_mutype_list, dtype=np.int64))
+            self._equiprobable_mutypes_ravel.append(
+                numpy.array(equivalent_mutype_list, dtype=np.int64)
+            )
 
         ravel_idxs = np.array(ravel_idxs, dtype=np.int64)
         ravel_idxs_to_sort = np.argsort(ravel_idxs)

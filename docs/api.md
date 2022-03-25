@@ -10,38 +10,47 @@
 ### Branch type and mutation type information
 
 ```{eval-rst}
-.. autoclass:: agemo.BranchTypeCounter()
+.. autoclass:: agemo.BranchTypeCounter
     :members:
+    :show-inheritance:
 ```
 
 ```{eval-rst}
-.. autoclass:: agemo.MutationTypeCounter()
+.. autoclass:: agemo.MutationTypeCounter
     :members:
+    :show-inheritance:
 ```
 
 ### Events
 
 ```{eval-rst}
-.. autoclass:: agemo.MigrationEvent()
+.. autoclass:: agemo.MigrationEvent
     :members:
+    :show-inheritance:
 ```
 
 ```{eval-rst}
-.. autoclass:: agemo.PopulationSplitEvent()
+.. autoclass:: agemo.PopulationSplitEvent
     :members:
+    :show-inheritance:
 ```
 
 
 ### Generating function
 
 ```{eval-rst}
-.. autoclass:: agemo.GfMatrixObject()
+.. autoclass:: agemo.GfMatrixObject
     :members:
 ```
 
 ### Evaluating GF
 
 ```{eval-rst}
-.. autoclass:: agemo.BSFSEvaluator()
+.. autoclass:: agemo.BSFSEvaluator
+    :members:
+```
+
+```{eval-rst}
+.. autoclass:: agemo.BSFSEvaluator.evaluate
     :members:
 ```
