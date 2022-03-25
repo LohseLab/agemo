@@ -60,9 +60,7 @@ def sort_mutation_types(branchtypes):
     elif isinstance(branchtypes, list) or isinstance(branchtypes, tuple):
         return sorted(set(branchtypes), key=lambda x: str(x))
     else:
-        raise ValueError(
-            f"sort_mutation_types not implemented for {type(branchtypes)}"
-        )
+        raise ValueError(f"sort_mutation_types not implemented for {type(branchtypes)}")
 
 
 def sum_all_but_idx(ar, idx):
@@ -74,9 +72,7 @@ def sum_all_but_idx(ar, idx):
 
 # representing samples
 def sample_to_str(sample_list):
-    return "/".join(
-        "_".join(lineage for lineage in pop) for pop in sample_list
-    )
+    return "/".join("_".join(lineage for lineage in pop) for pop in sample_list)
 
 
 def paths_from_visited_node(graph, node, equation_dict, path):
@@ -123,16 +119,12 @@ class GfObject:
         self.coalescence_rates = coalescence_rates
         self.migration_direction = migration_direction
         if migration_direction and not migration_rate:
-            raise ValueError(
-                "Migration direction provided but no migration rate."
-            )
+            raise ValueError("Migration direction provided but no migration rate.")
         else:
             self.migration_rate = migration_rate
         self.exodus_direction = exodus_direction
         if exodus_direction and not exodus_rate:
-            raise ValueError(
-                "Migration direction provided but no migration rate."
-            )
+            raise ValueError("Migration direction provided but no migration rate.")
         else:
             self.exodus_rate = exodus_rate
 
@@ -143,9 +135,7 @@ class GfObject:
         :param list state_list: list of population tuples containing lineages (str)
         """
         result = []
-        for idx, (pop, rate) in enumerate(
-            zip(state_list, self.coalescence_rates)
-        ):
+        for idx, (pop, rate) in enumerate(zip(state_list, self.coalescence_rates)):
             for count, coal_event in coalesce_single_pop(pop):
                 modified_state_list = list(state_list)
                 modified_state_list[idx] = coal_event
@@ -165,9 +155,7 @@ class GfObject:
                 for lineage, count in lineage_count.items():
                     temp = list(state_list)
                     idx = temp[source].index(lineage)
-                    temp[source] = tuple(
-                        temp[source][:idx] + temp[source][idx + 1 :]
-                    )
+                    temp[source] = tuple(temp[source][:idx] + temp[source][idx + 1 :])
                     temp[destination] = tuple(
                         sorted(
                             list(temp[destination])
@@ -190,9 +178,7 @@ class GfObject:
             for *source, destination in self.exodus_direction:
                 temp = list(state_list)
                 sources_joined = tuple(
-                    itertools.chain.from_iterable(
-                        [state_list[idx] for idx in source]
-                    )
+                    itertools.chain.from_iterable([state_list[idx] for idx in source])
                 )
                 if len(sources_joined) > 0:
                     temp[destination] = tuple(
@@ -206,7 +192,7 @@ class GfObject:
     def rates_and_events(self, state_list):
         """
         Returning all possible events, and their respective rates
-        :param list state_list: list of population tuples 
+        :param list state_list: list of population tuples
         containing lineages (str)
         """
         c = self.coalescence_events(state_list)
@@ -218,7 +204,7 @@ class GfObject:
         """
         Yields single (tail) recursion step for the generating function
         :param object gf_old: result from previous recursion step
-        :param list state_list: list of population tuples containing 
+        :param list state_list: list of population tuples containing
         lineages (str)
         """
         current_branches = list(flatten(state_list))
@@ -239,7 +225,7 @@ class GfObject:
     def make_gf(self):
 
         stack = [(1, self.sample_list)]
-        #result = []
+        # result = []
         while stack:
             gf_n, state_list = stack.pop()
             if sum(len(pop) for pop in state_list) == 1:
@@ -306,12 +292,22 @@ class GfObjectChainRule(GfObject):
 
 
 class GfMatrixObject:
+    """
+
+    :param branch_type_counter: Object describing all branchtypes for which to return
+       the Laplace transformed joint distribution of coalescence times.
+    :type branch_type_counter: class `agemo.BranchTypeCounter`
+    :param events: List of events defining the structured coalescent model, defaults to None.
+    :type events: list(class `agemo.Event`), optional
+
+    """
+
     def __init__(
         self,
         branch_type_counter,
         events=None,
     ):
-        
+
         self.sample_list = branch_type_counter.sample_configuration
         self.branchtype_dict = branch_type_counter.labels_dict
         self.num_branchtypes = len(branch_type_counter)
@@ -327,12 +323,27 @@ class GfMatrixObject:
         num_events = len(events)
         num_coalescence_events = len(self.sample_list)
         self.num_variables = num_coalescence_events + num_events
-        assert sorted(all_event_idxs)==list(range(num_coalescence_events, self.num_variables)), f"all event idxs should be unique and range between {num_coalescence_events} and {self.num_variables}."
-        
+        assert sorted(all_event_idxs) == list(
+            range(num_coalescence_events, self.num_variables)
+        ), f"all event idxs should be unique and range between {num_coalescence_events} and {self.num_variables}."
+
         self.discrete_events = [event.idx for event in events if event.discrete]
-        self.coalescence_events = eventslib.CoalescenceEventsSuite(len(self.sample_list))
+        self.coalescence_events = eventslib.CoalescenceEventsSuite(
+            len(self.sample_list)
+        )
 
     def make_gf(self):
+        """
+        Build the generating function recursively given the specified structured coalescent
+        model and a branchtype mapping. Returns a tuple consisting of all paths and all
+        equations in matrix form. The paths are a list of list, where each list describes
+        a single path. The indices for each path point to the index of the equation in the
+        equation array.
+
+        :return gf: paths, equations
+        :rtype gf: (list(list(int)), class `np.ndarray`)
+
+        """
         stack = [
             (list(), self.sample_list),
         ]
@@ -358,9 +369,7 @@ class GfMatrixObject:
                         paths.append(add_on_path)
                 else:
                     nodes_visited.append(parent_node)
-                    multiplier_array, new_state_list = self.gf_single_step(
-                        state
-                    )
+                    multiplier_array, new_state_list = self.gf_single_step(state)
                     eq_list.append(multiplier_array)
                     for new_state in new_state_list:
                         child_node = sample_to_str(new_state)
@@ -390,25 +399,17 @@ class GfMatrixObject:
             if sum(len(pop) for pop in state) > 1:
                 if parent_node not in nodes_visited:
                     nodes_visited.add(parent_node)
-                    multiplier_array, new_state_list = self.gf_single_step(
-                        state
-                    )
+                    multiplier_array, new_state_list = self.gf_single_step(state)
                     eq_list.append(multiplier_array)
                     for eq, new_state in zip(multiplier_array, new_state_list):
                         child_node = sample_to_str(new_state)
                         if child_node in str_to_numeric_node_dict:
-                            child_node_numeric = str_to_numeric_node_dict[
-                                child_node
-                            ]
+                            child_node_numeric = str_to_numeric_node_dict[child_node]
                         else:
                             child_node_numeric = node_idx
-                            str_to_numeric_node_dict[
-                                child_node
-                            ] = child_node_numeric
+                            str_to_numeric_node_dict[child_node] = child_node_numeric
                             node_idx += 1
-                        graph_dict[parent_node_numeric].append(
-                            child_node_numeric
-                        )
+                        graph_dict[parent_node_numeric].append(child_node_numeric)
                         equation_dict[
                             (parent_node_numeric, child_node_numeric)
                         ] = eq_idx
@@ -419,21 +420,19 @@ class GfMatrixObject:
             tuple(graph_dict[i]) if i in graph_dict else tuple()
             for i in range(node_idx)
         ]
-        adjacency_matrix = eq_dict_to_adjacency_matrix(
-            equation_dict, node_idx, eq_idx
-        )
+        adjacency_matrix = eq_dict_to_adjacency_matrix(equation_dict, node_idx, eq_idx)
 
         return (graph_array, adjacency_matrix, np.concatenate(eq_list, axis=0))
 
     def collapse_graph(self, graph_array, adjacency_matrix, eq_matrix):
         num_discrete_events = len(self.discrete_events)
-        
-        if num_discrete_events==0:
+
+        if num_discrete_events == 0:
             collapsed_graph_array = graph_array
             eq_array = tuple([(i,) for i in range(eq_matrix.shape[0])])
             to_invert_array = np.zeros(len(eq_array), dtype=bool)
         else:
-            if num_discrete_events>1:
+            if num_discrete_events > 1:
                 raise NotImplementedError
             delta_idx = self.discrete_events[0]
             root = 0
@@ -460,17 +459,12 @@ class GfMatrixObject:
                         path = path_so_far[:]
                         path.append(vertex_eq)
                         to_invert = eq_matrix[vertex_eq, 1, delta_idx] == 1
-                        if (
-                            eq_matrix[vertex_eq, 0, delta_idx] == 0
-                            and to_invert
-                        ):
+                        if eq_matrix[vertex_eq, 0, delta_idx] == 0 and to_invert:
                             stack.append((child, parent_new_idx, path))
                         elif eq_matrix[vertex_eq, 0, delta_idx] == 1:
                             child_new_idx = new_node_idx
                             new_node_idx += 1
-                            collapsed_graph_dict[parent_new_idx].append(
-                                child_new_idx
-                            )
+                            collapsed_graph_dict[parent_new_idx].append(child_new_idx)
                             stack.append((child, child_new_idx, []))
                             equations_dict[parent_new_idx, child_new_idx] = (
                                 tuple(path),
@@ -484,18 +478,14 @@ class GfMatrixObject:
                                 visited[child] = child_new_idx
                                 new_node_idx += 1
                                 stack.append((child, child_new_idx, []))
-                            collapsed_graph_dict[parent_new_idx].append(
-                                child_new_idx
-                            )
+                            collapsed_graph_dict[parent_new_idx].append(child_new_idx)
                             equations_dict[parent_new_idx, child_new_idx] = (
                                 tuple(path),
                                 to_invert,
                             )
 
             collapsed_graph_array = [
-                tuple(collapsed_graph_dict[i])
-                if i in collapsed_graph_dict
-                else tuple()
+                tuple(collapsed_graph_dict[i]) if i in collapsed_graph_dict else tuple()
                 for i in range(new_node_idx)
             ]
             (
@@ -513,15 +503,33 @@ class GfMatrixObject:
         )
 
     def equations_graph(self):
+        """
+        Returns all information needed to evaluate the generating function.
+        `adjacency_list`: contains a tuple with the children of each parent i at index i.
+        `node_to_equations_map`: tuple pointing to equation in equation matrix represented by
+        each node. Note that only nodes that require an inverse Laplace transform with
+        respect to a discrete event might be associated with a tuple containing more than one
+        integer.
+        `to_invert_array` is a boolean array indicating whether the equations associated with
+        the node at each index require an inverse Lapalce transform with respect to a discrete
+        event.
+        `equation_matrix`: array containing the coefficients for the numerator and denominator
+        of the uninverted Laplace transform of the joint coalescence time distribution. This
+        is the same matrix as would have been obtained by running `make_gf()`.
+
+        :return computational_graph: (`adjacency_list`, `node_to_equations_map`, `to_invert_array`, `equation_matrix`)
+        :rtype computational_graph: (list(tuple(int)), , class `np.ndarray(bool)`, class `np.ndarray(int)`)
+
+        """
         num_discrete_events = len(self.discrete_events)
         if num_discrete_events:
-            if num_discrete_events>1:
+            if num_discrete_events > 1:
                 raise NotImplementedError
             else:
                 delta_idx = self.discrete_events[0]
         else:
             delta_idx = None
-        
+
         stack = [
             (list(), self.sample_list, 0),
         ]
@@ -599,9 +607,7 @@ class GfMatrixObject:
         # eq_graph_array, eq_array, to_invert_array, eq_matrix
         # array representation of graph, linking nodes to eqs , boolean_to_invert, matrix_with_coefficients
         return (
-            *remap_eq_arrays(
-                eq_graph_dict, equation_dict, node_idx, inverted_node_idx
-            ),
+            *remap_eq_arrays(eq_graph_dict, equation_dict, node_idx, inverted_node_idx),
             np.concatenate(eq_list, axis=0),
         )
 
@@ -631,9 +637,7 @@ class GfMatrixObject:
 
         multiplier_array[:, 1] = np.sum(multiplier_array[:, 0], axis=0)
         dummy_array = np.tile(dummy_array, (multiplier_array.shape[0], 1, 1))
-        multiplier_array = np.concatenate(
-            (multiplier_array, dummy_array), axis=2
-        )
+        multiplier_array = np.concatenate((multiplier_array, dummy_array), axis=2)
         return (multiplier_array, new_state_list)
 
     def rates_and_events(self, state_list):
@@ -643,12 +647,11 @@ class GfMatrixObject:
             all_events += event._single_step(state_list)
         return all_events
 
+
 def eq_dict_to_adjacency_matrix(equation_dict, max_idx, max_value):
     dtype = np.min_scalar_type(max_value + 1)
     fill_value = np.iinfo(dtype).max
-    adjacency_matrix = np.full(
-        (max_idx, max_idx), fill_value=fill_value, dtype=dtype
-    )
+    adjacency_matrix = np.full((max_idx, max_idx), fill_value=fill_value, dtype=dtype)
     for (p, c), eq_idx in equation_dict.items():
         adjacency_matrix[p, c] = eq_idx
     return adjacency_matrix
@@ -661,9 +664,7 @@ def eq_dict_to_adjacency_matrix_collapsed_graph(equation_dict, max_idx):
     to_invert = np.array([t[1][1] for t in sorted_eq_dict])
     dtype = np.min_scalar_type(max_value + 1)
     fill_value = np.iinfo(dtype).max
-    adjacency_matrix = np.full(
-        (max_idx, max_idx), fill_value=fill_value, dtype=dtype
-    )
+    adjacency_matrix = np.full((max_idx, max_idx), fill_value=fill_value, dtype=dtype)
     for idx, ((p, c), _) in enumerate(sorted_eq_dict):
         adjacency_matrix[p, c] = idx
     return (adjacency_matrix, eq_array, to_invert)
@@ -683,8 +684,7 @@ def remap_eq_arrays(eq_graph_dict, equation_dict, node_idx, inverted_node_idx):
     }
     # remap equation_dict
     equation_dict = {
-        map_to_pos_values(k, max_node_idx): vs
-        for k, vs in equation_dict.items()
+        map_to_pos_values(k, max_node_idx): vs for k, vs in equation_dict.items()
     }
     to_invert_array = np.ones(total_num_nodes, dtype=bool)
     to_invert_array[:max_node_idx] = 0
@@ -720,8 +720,7 @@ def split_paths_laplace(paths, multiplier_array, delta_idx):
     # split paths into no_delta, with_delta
     if delta_idx is None:
         filtered_paths = [
-            [np.array(path, dtype=int), np.array([], dtype=int)]
-            for path in paths
+            [np.array(path, dtype=int), np.array([], dtype=int)] for path in paths
         ]
     else:
         filtered_paths = []

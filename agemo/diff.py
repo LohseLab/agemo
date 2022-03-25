@@ -5,9 +5,7 @@ import math
 
 # numerical compensation algorithms
 # algorithm from Ogita et al. 2005. Accurate sum and dot product. Journal of Scientific Computing
-@numba.njit(
-    numba.types.UniTuple(numba.float64, 2)(numba.float64, numba.float64)
-)
+@numba.njit(numba.types.UniTuple(numba.float64, 2)(numba.float64, numba.float64))
 def two_sum(a, b):
     x = a + b
     y = x - a
@@ -134,9 +132,7 @@ def taylor_coeff_exponential_legacy(
     # of the form e**(c*f(var_array))
     # degree of f max 1 for each var
     diff_array = np.array(diff_array, dtype=np.uint8)
-    p1 = c ** (np.sum(diff_array)) * np.prod(
-        f[-num_branchtypes:] ** diff_array
-    )
+    p1 = c ** (np.sum(diff_array)) * np.prod(f[-num_branchtypes:] ** diff_array)
     fact = 1
     for num in diff_array:
         fact *= math.gamma(num + 1)
@@ -174,9 +170,7 @@ def series_product_legacy(arr1, arr2, subsetdict):
     for k in np.ndindex(shape):
         new_idxs = subsetdict[k]
         # result[k] = np.sum(ravel_arr1[new_idxs]*(ravel_arr2[new_idxs][::-1]))
-        result[k] = casc_sum(
-            ravel_arr1[new_idxs] * (ravel_arr2[new_idxs][::-1])
-        )
+        result[k] = casc_sum(ravel_arr1[new_idxs] * (ravel_arr2[new_idxs][::-1]))
     return result
 
 
@@ -196,14 +190,13 @@ def series_quotient_legacy(arr1, arr2, subsetdict):
     # arr1/arr2
     shape = arr1.shape
     result = np.zeros_like(arr1)
-    #ravel_arr1 = np.ravel(arr1)
+    # ravel_arr1 = np.ravel(arr1)
     ravel_arr2 = np.ravel(arr2)
     quot = 1 / ravel_arr2[0]
     for k in np.ndindex(shape):
         new_idxs = subsetdict[k]
         result[k] = quot * (
-            arr1[k]
-            - np.sum(np.ravel(result)[new_idxs] * ravel_arr2[new_idxs][::-1])
+            arr1[k] - np.sum(np.ravel(result)[new_idxs] * ravel_arr2[new_idxs][::-1])
         )
     return result
 
@@ -224,9 +217,7 @@ def return_smaller_than_idx(idx, shape):
     all_indices = itertools.product(*(range(i + 1) for i in idx))
     return np.array(
         [
-            ravel_multi_index(
-                np.array(idx2, dtype=int), np.array(shape, dtype=int)
-            )
+            ravel_multi_index(np.array(idx2, dtype=int), np.array(shape, dtype=int))
             for idx2 in all_indices
         ],
         dtype=int,
@@ -237,9 +228,7 @@ def return_strictly_smaller_than_idx(idx, shape):
     all_indices = itertools.product(*(range(i + 1) for i in idx))
     return np.array(
         [
-            ravel_multi_index(
-                np.array(idx2, dtype=int), np.array(shape, dtype=int)
-            )
+            ravel_multi_index(np.array(idx2, dtype=int), np.array(shape, dtype=int))
             for idx2 in itertools.takewhile(
                 lambda x: x != idx or sum(x) != 0, all_indices
             )
@@ -272,9 +261,7 @@ def return_smaller_than_idx_marg(start, max_value, shape):
     check = increment_marginal(start, len(shape) - 1, max_value, reset_value)
     while check == 0:
         yield ravel_multi_index(start, shape)
-        check = increment_marginal(
-            start, len(shape) - 1, max_value, reset_value
-        )
+        check = increment_marginal(start, len(shape) - 1, max_value, reset_value)
 
 
 def product_subsetdict_marg_legacy(shape):
@@ -371,9 +358,7 @@ def product_f_g(subsetdict, f, g, signs):
 
 
 @numba.njit
-def all_polynomials_legacy(
-    eq_matrix, shape, var_array, num_branchtypes, mutype_shape
-):
+def all_polynomials_legacy(eq_matrix, shape, var_array, num_branchtypes, mutype_shape):
     num_equations = eq_matrix.shape[0]
     if num_equations == 0:
         result = np.zeros((1, *shape), dtype=np.float64)
@@ -385,9 +370,7 @@ def all_polynomials_legacy(
             dot_product = simple_dot_product(eq, var_array)
             if dot_product == 0:
                 raise ZeroDivisionError
-            for idx2, mutype in zip(
-                np.ndindex(shape), np.ndindex(mutype_shape)
-            ):
+            for idx2, mutype in zip(np.ndindex(shape), np.ndindex(mutype_shape)):
                 # mutype = np.array(mutype, dtype=np.uint8)
                 result[(idx, *idx2)] = taylor_coeff_inverse_polynomial_legacy(
                     eq, var_array, mutype, num_branchtypes, dot_product
@@ -406,9 +389,7 @@ def all_polynomials(
         result = np.zeros((num_equations, size))
         theta = var_array[-1]
         for idx, eq in enumerate(eq_matrix):
-            dot_product = simple_dot_product_setback(
-                eq, var_array, num_branchtypes
-            )
+            dot_product = simple_dot_product_setback(eq, var_array, num_branchtypes)
             # issue here: this is not entire dot product!!!! needs adapting to catch the
             # correct zerodivision errors!!
             # if dot_product==0:
@@ -453,9 +434,7 @@ def all_exponentials(
     theta = var_array[-1]
     for idx, eq in enumerate(eq_matrix):
         # exponential_part = np.exp(-time*simple_dot_product(eq, var_array))
-        dot_product = simple_dot_product_setback(
-            eq, var_array, num_branchtypes
-        )
+        dot_product = simple_dot_product_setback(eq, var_array, num_branchtypes)
         for idx2, mutype in enumerate(mutypes):
             result[idx, idx2] = taylor_coeff_exponential(
                 -time,
@@ -470,9 +449,7 @@ def all_exponentials(
 
 
 @numba.njit
-def product_pairwise_diff_inverse_polynomial(
-    polynomial_f, shape, combos, subsetdict
-):
+def product_pairwise_diff_inverse_polynomial(polynomial_f, shape, combos, subsetdict):
     if shape[0] <= 1:
         return polynomial_f
     else:
@@ -504,9 +481,7 @@ def generate_pairwise_idxs(num_equations):
         n = num_equations * (num_equations - 1) // 2
         temp[np.triu_indices(num_equations, k=1)] = np.arange(n)
         temp = np.tril(temp.T) + np.triu(temp, 1)
-        return temp[~np.eye(num_equations, dtype=bool)].reshape(
-            (num_equations, -1)
-        )
+        return temp[~np.eye(num_equations, dtype=bool)].reshape((num_equations, -1))
 
 
 def compile_inverted_eq_legacy(
@@ -521,9 +496,7 @@ def compile_inverted_eq_legacy(
     numerators_eq = eq_matrix[:, 0]
     denominators_eq = eq_matrix[:, 1]
     num_equations = len(numerators_eq)
-    signs = (-np.ones(num_equations, dtype=np.int8)) ** np.arange(
-        num_equations
-    )
+    signs = (-np.ones(num_equations, dtype=np.int8)) ** np.arange(num_equations)
     if not delta_in_nom:
         signs *= (-1) ** (num_equations)
         denominators_eq = np.vstack(
@@ -557,9 +530,7 @@ def compile_inverted_eq_legacy(
                 mutype_shape,
             )
             # adapt with signs! diff dims!
-            terms = product_f_g(
-                subsetdict, expf, denoms[:num_equations], signs
-            )
+            terms = product_f_g(subsetdict, expf, denoms[:num_equations], signs)
             all_terms = np.sum(terms, axis=0)
             if not delta_in_nom:
                 all_terms += denoms[-1]
@@ -582,9 +553,7 @@ def compile_inverted_eq(
     numerators_eq = eq_matrix[:, 0]
     denominators_eq = eq_matrix[:, 1]
     num_equations = len(numerators_eq)
-    signs = (-np.ones(num_equations, dtype=np.int8)) ** np.arange(
-        num_equations
-    )
+    signs = (-np.ones(num_equations, dtype=np.int8)) ** np.arange(num_equations)
     if not delta_in_nom:
         signs *= (-1) ** (num_equations)
         denominators_eq = np.vstack(
@@ -625,9 +594,7 @@ def compile_inverted_eq(
             )
             # adapt with signs! diff dims!
             # have product_f_g return expf if denoms[:num_equations] ...
-            terms = product_f_g(
-                subsetdict, expf, denoms[:num_equations], signs
-            )
+            terms = product_f_g(subsetdict, expf, denoms[:num_equations], signs)
             all_terms = np.sum(terms, axis=0)
             if not delta_in_nom:
                 all_terms += denoms[-1]
@@ -641,7 +608,7 @@ def compile_inverted_eq(
 def compile_non_inverted_eq_legacy(eq_matrix, shape, mutype_shape):
     num_branchtypes = len(mutype_shape)
     # eq_matrix = eq_matrix.astype(np.float64) #required for numba dot product
-    
+
     def _make_eq(var):
         if eq_matrix.shape[0] == 0:
             return np.zeros((0, *shape), dtype=np.float64)
@@ -764,9 +731,7 @@ def prepare_graph_evaluation_with_marginals(
     not_to_invert = np.zeros(np.sum(~to_invert_array), dtype=int)
     i = 0
     while i < to_invert_array.size and not to_invert_array[i]:
-        not_to_invert[i] = eq_array[i][
-            0
-        ]  # idxs of the equations within eq_matrix
+        not_to_invert[i] = eq_array[i][0]  # idxs of the equations within eq_matrix
         i += 1
 
     f_non_inverted = compile_non_inverted_eq(
@@ -821,9 +786,7 @@ def evaluate_single_point(shape, f_non_inverted, *f_inverted):
     return _eval_single_point
 
 
-def evaluate_single_point_with_marginals_legacy(
-    k_max, f_array, num_eq_tuple, slices
-):
+def evaluate_single_point_with_marginals_legacy(k_max, f_array, num_eq_tuple, slices):
     # f_array should be of shape: (k_max.size**2, 2)
     result_shape = k_max + 2
     num_eq_non_inverted, num_eq_inverted = num_eq_tuple
@@ -832,13 +795,9 @@ def evaluate_single_point_with_marginals_legacy(
     def _eval_single_point(var, time):
         result = np.zeros((num_eq, *result_shape), dtype=np.float64)
         for ((f_non_inverted, f_inverted), slc) in zip(f_array, slices):
-            result[:num_eq_non_inverted][(..., *slc)].flat = f_non_inverted(
-                var
-            ).flat
+            result[:num_eq_non_inverted][(..., *slc)].flat = f_non_inverted(var).flat
             for idx, f in enumerate(f_inverted):
-                result[num_eq_non_inverted + idx][(..., *slc)].flat = f(
-                    var, time
-                ).flat
+                result[num_eq_non_inverted + idx][(..., *slc)].flat = f(var, time).flat
         return result
 
     return _eval_single_point
@@ -888,9 +847,7 @@ def generate_slices(k_max, marg_boolean):  # legacy
     for b in marg_boolean:
         yield tuple(
             [
-                slice(0, k_max[i] + 1)
-                if not bi
-                else slice(k_max[i] + 1, k_max[i] + 2)
+                slice(0, k_max[i] + 1) if not bi else slice(k_max[i] + 1, k_max[i] + 2)
                 for i, bi in enumerate(b)
             ]
         )
@@ -911,9 +868,7 @@ def taylor_to_probability_coeffs_legacy(shape, include_marginals=False):
     return temp
 
 
-def taylor_to_probability_coeffs(
-    mutype_array, mutype_shape, include_marginals=False
-):
+def taylor_to_probability_coeffs(mutype_array, mutype_shape, include_marginals=False):
     if not include_marginals:
         return np.sum(mutype_array, axis=-1)
     else:
@@ -961,7 +916,7 @@ def naive_graph_iterator(evaluated_eqs, paths, subsetdict):
     shape_single = evaluated_eqs[0].shape
     result = np.zeros(shape_single, dtype=np.float64)
     for path in paths:
-        #subset_evaluated_eqs = evaluated_eqs[path]
+        # subset_evaluated_eqs = evaluated_eqs[path]
         result += product_f(subsetdict, evaluated_eqs)
 
     return result
@@ -985,9 +940,7 @@ def resolve_dependencies(graph):
     return np.array(stack, dtype=int)
 
 
-def iterate_graph(
-    sequence, graph, adjacency_matrix, evaluated_eqs, subsetdict
-):
+def iterate_graph(sequence, graph, adjacency_matrix, evaluated_eqs, subsetdict):
     shape = evaluated_eqs[0].shape
     num_nodes = len(sequence)
     node_values = np.zeros((num_nodes, *shape), np.float64)
