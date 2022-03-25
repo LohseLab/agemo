@@ -151,7 +151,7 @@ class BSFSEvaluator:
             include_marginals=True,
         )
 
-    def evaluate(self, theta, var, time):
+    def evaluate(self, theta, var, time=0):
         """
         Calculate the bSFS for a single point in paremeter space.
 

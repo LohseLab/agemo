@@ -419,18 +419,18 @@ class BranchTypeCounter(TypeCounter):
 
     :param sample_configuration: Should contain a list or tuple for each of the populations involved in the
         coalescent history of the sample, even those that do not contain any lineages at the time of sampling.
-        Example: `[(,),("a", "a"), ("b", "b")]`.
+        Example: `[(), ("a", "a"), ("b", "b")]`.
     :type sample_configuration: list(list(str))
     :param phased: Indicates whether we can distinguish samples within the same population, defaults to False.
         When False, all samples within the same population get the same identifier. Ideally,
         the `sample_configuration` as provided would already be simplified accordingly.
-    :type phased: boolean
+    :type phased: bool
     :param rooted: Indicates whether branch types should be rooted, defaults to False
-    :type rooted: boolean
+    :type rooted: bool
     :param branchtype_dict: Mapping of all branchtypes to an integer index. Changes the order
         of the coefficients within the equation matrix for each of the branch types,
         defaults to `None`
-    :type branchtype_dict: dict, optional
+    :type branchtype_dict: dict
 
     """
 
@@ -536,8 +536,8 @@ class MutationTypeCounter(TypeCounter):
     :param branch_types: All branchtypes for a given sample set.
     :type branch_types: class `agemo.BranchTypeCounter`
     :param mutype_shape: Tuple of integers of length equal to the number of different branch types.
-        Provides the shape for the bSFS. In that case, the shape equates to k_{max} + 2. Here
-        k_{max} indicates the maximum number of mutations along each of the branch types for which
+        Provides the shape for the bSFS. In that case, the shape equates to :math:`k_{max} + 2`. Here
+        :math:`k_{max}` indicates the maximum number of mutations along each of the branch types for which
         we want to calculate the likelihood.
     :type mutype_shape: tuple(int)
 

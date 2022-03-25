@@ -47,10 +47,5 @@
 
 ```{eval-rst}
 .. autoclass:: agemo.BSFSEvaluator
-    :members:
-```
-
-```{eval-rst}
-.. autoclass:: agemo.BSFSEvaluator.evaluate
-    :members:
+    :members: evaluate, make_product_subsetdict
 ```
