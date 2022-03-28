@@ -1,5 +1,5 @@
 title: agemo manual
-author: Gertjan Bisschop
+author: Lohse Lab
 copyright: "2022"
 only_build_toc_files: true
 
@@ -7,6 +7,10 @@ repository:
   url: https://github.com/LohseLab/agemo
   branch: main
   path_to_book: docs
+
+html:
+  use_repository_button: true
+  use_issues_button: true
 
 bibtex_bibfiles:
     - references.bib
