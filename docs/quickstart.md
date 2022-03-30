@@ -1,41 +1,40 @@
 # Quickstart
 
-Interacting with **agemo** will always start with specifying a structured coalescent model as well as defining the branchtypes you want to distinguish. Once a StructuredCoalescentModel and a BranchTypeCounter have been genererated you can generate the Laplace transformed distribution of coalescence times.
-
-## specify model
-
-:::{todo}
-Create StructuredCoalescentModel() object
-:::
-
-Currently, the available models are limited to structured coalescent models with uni-directional migration and/or population splits.
-
+Interacting with **agemo** will always start by specifying a structured coalescent model for which you would want to obtain the generating function. Defining the structured coalescent model requires a sample configuration, and a list of events whenever there is more than one population from which samples have been drawn.
 
 ## sample configuration
 
-The sample configuration should be a list of lists containing the label (**string**) for each sample within each population. Note that ancestral populations not containing any lineages at the time of sampling need to be represented as empty lists.
+The sample configuration should be a list containing a tuple for each of the populations that will be relevant during the coalescent history of the sample. For example, say two derived populations originated from a population split at some time point in the past, then you would have to provide an empty tuple representing that ancestral population.
+
+```python
+sample_configuration = [(, ), ('a', 'a'), ('b', 'b')]
+
+```
+In the example the first tuple represents the ancestral population not containing any lineages at the moment of sampling. Note that each sample should be represented using a single character.
+
+## events
+
+Secondly, a list containing all events relevant for the sample history should be compiled. See {class}`.Event`. Note that each event should be associated with a unique index ranging between the number of populations and (the number of populations $+$ the number of events). See {ref}`sec_array_indexing` on the why and how of using these indices.
+
+Currently, the available models are limited to structured coalescent models with uni-directional migration and/or population splits.
+
+## branchtypes
+
+For a given sample configuration the set of possible branchtypes can be specified using {class}`.BranchTypeCounter`. Specify whether you want to take phase and/or root information into account. By default root and phase information are removed. In the absence of phase information you should label all samples within a single population with the same letter. In the absence of root information, the number of branchtypes will be halved, this is identical to folding when thinking about the site frequency spectrum.
 
 
-## specify branchtypes to distinguish
+## generating function
 
-To generate the Laplace transform we need a mapping that maps all possible combinations of the sample labels to one of the branchtypes you want to distinguish. 
-Each unique branchtype will be associated to a unique integer between 0 and the number of possible branchtypes. Either you can let the BranchTypeCounter take care of this, by specifying whether you want the mapping to retain root and/or phase information. Or you can proivde your own mapping using the branchtypedict option (see API).
+We can now finally determine the GF. This is done through an instance of {class}`.GfMatrixObject`.
 
-If root is False (default), each subset of sampled lineages and its complement will be mapped to the same branchtype.
-
-If phase is False (default), we can no longer make a distinction between any of the lineages within a single population. Phrased differently, we proceed as if all sampled lineages within a single population carry the same label.
-
-:::{todo}
-Make sure that when phase=False we check whether all samples from a single pop carry the same label.
-:::
-
-:::{todo}
-Check, can a branchtype mapping be provided that is completely custom, and does not follow any rules.
-:::
-
-## generate Laplace transform
-
-You are now set to instantiate a GFMatrixObject. From there we can use the `.make_gf` method to generate the Laplace transform. The result is a list of lists as well as an equation_array. The list contains all paths through the coalescent state space graph, with each sublist representing a single path. Index $i$ within a sublist points at equation_array[$i$] which contains the coefficients representing equation $i$. 
+```python
+sample_configuration = [(, ), ('a', 'a'), ('b', 'b')]
+btc = agemo.BranchTypeCounter(sample_configuration)
+idx = len(sample_configuration)
+events_list = [agemo.PopulationSplitEvent(idx, 0, 1, 2)]
+gfObject = agemo.GFMatrixObject(btc, events_list)
+```
+From here we can use the {meth}`.GfMatrixObject.make_gf` method to generate the Laplace transform. The result is a list of lists as well as an equation_array. The list contains all paths through the coalescent state space graph, with each sublist representing a single path. Index $i$ within a sublist points at equation_array[$i$] which contains the coefficients representing equation $i$. See {ref}`sec_equation_array` on how to interpret these coefficients.
 
 Build the equations in conventional form: `.gflib.equations_from_matrix`.
 
@@ -43,10 +42,19 @@ Build the equations in conventional form: `.gflib.equations_from_matrix`.
 In case a discrete event was included, the equations generated by `.equations_from_matrix` still require taking an inverse Laplace transform with respect to the dummy variable representing the discrete event. This can be done using `.inverse.inverse_laplace_single_event()`.
 :::
 
-:::{todo}
-Should be replaced by: agemo.GFMatrixObject(BranchTypeCounter, Structured Coalescent Model)
-:::
+(sec_equation_array)=
+## equation array
+each entry of the array is a 2d array with 
+first row represents numerator coeffs
+second row reprsenting the denominator coeffs.
+concept of dot product for fast evaluation with vector of same length representing the rate of all modelled processes.
 
+
+(sec_array_indexing)=
+## array indexing
+
+Once the generating function has been determined, evaluating the GF will require a set of variables. These should be of the form 
+$[c_0, ... c_m, e_0, ..., e_n, b_0, ..., b_o]$ With $c_i$ representing the coalenscent rate of population $i$, $e_j$ representing the rate of event $j$ and $b_k$ representing the mutation rate along branchtype $k$.
 
 ## Evaluating the Laplace transform
 
