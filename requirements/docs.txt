@@ -1,0 +1,3 @@
+https://github.com/executablebooks/jupyter-book/archive/refs/heads/master.zip  # After merging https://github.com/executablebooks/jupyter-book/pull/1422
+numpy<1.22,>=1.18
+numba>=0.54.0
