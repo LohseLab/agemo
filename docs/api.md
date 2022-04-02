@@ -12,13 +12,13 @@
 ```{eval-rst}
 .. autoclass:: agemo.BranchTypeCounter
     :members:
-    :show-inheritance:
+    :special-members: __len__
 ```
 
 ```{eval-rst}
 .. autoclass:: agemo.MutationTypeCounter
     :members:
-    :show-inheritance:
+    :special-members: __len__
 ```
 
 ### Events
@@ -26,13 +26,11 @@
 ```{eval-rst}
 .. autoclass:: agemo.MigrationEvent
     :members:
-    :show-inheritance:
 ```
 
 ```{eval-rst}
 .. autoclass:: agemo.PopulationSplitEvent
     :members:
-    :show-inheritance:
 ```
 
 

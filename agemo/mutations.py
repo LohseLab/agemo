@@ -460,6 +460,11 @@ class BranchTypeCounter(TypeCounter):
         return self._custom_mapping
 
     def __len__(self):
+        """
+        Returns number of branch types.
+
+        """
+
         return len(self._labels)
 
     def custom_branchtype_dict_mapping(self, branchtype_dict):
@@ -617,6 +622,10 @@ class MutationTypeCounter(TypeCounter):
         return self._BranchTypeCounter._rooted
 
     def __len__(self):
+        """
+        Returns number of unique possible mutypes.
+
+        """
         return len(self._all_mutypes)
 
     def generate_and_sort_all_mutypes(self):
