@@ -353,7 +353,7 @@ class GfMatrixObject:
         # keeping track of things
         graph_dict = collections.defaultdict(list)
         equation_dict = dict()  # key=(parent, child), value=eq_idx
-        nodes_visited = list()  # list of all nodes visisted
+        nodes_visited = set()  # list of all nodes visisted
 
         while stack:
             path_so_far, state = stack.pop()
@@ -368,7 +368,7 @@ class GfMatrixObject:
                     ):
                         paths.append(add_on_path)
                 else:
-                    nodes_visited.append(parent_node)
+                    nodes_visited.add(parent_node)
                     multiplier_array, new_state_list = self.gf_single_step(state)
                     eq_list.append(multiplier_array)
                     for new_state in new_state_list:
@@ -543,7 +543,7 @@ class GfMatrixObject:
         equation_dict = dict()  # key=eq_node, value=[eq_idx1, eq_idx2,...]
         state_eq_dict = dict()  # key=(parent, child), value=eq_idx
         state_node_dict = dict()
-        visited = list()  # list of all states visisted
+        visited = set()  # list of all states visisted
 
         while stack:
             path_so_far, state, parent_idx = stack.pop()
@@ -560,7 +560,7 @@ class GfMatrixObject:
                 parent_visited = parent in visited
                 multiplier_array, new_state_list = self.gf_single_step(state)
                 if not parent_visited:
-                    visited.append(parent)
+                    visited.add(parent)
                     eq_list.append(multiplier_array)
                 for new_eq, new_state in zip(multiplier_array, new_state_list):
                     child = sample_to_str(new_state)

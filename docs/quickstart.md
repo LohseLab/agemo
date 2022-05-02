@@ -68,7 +68,7 @@ In case of a discrete event, the variable array should not contain an entry for 
 In the case of multiple populations, coalescence rates are relative and should be given relative to the rate in a reference population, i.e. $c_i = N_{e_{i}}/N_{e_{ref}}$. In case of a single population, $c_0 = 1$.
 :::
 
-(sec_bsfs_quickstart)
+(sec_bsfs_quickstart)=
 ### compute probabilities for bSFS
 
 Computing the bSFS can be done for structured coalescent model with up to 1 discrete event. See section on [bSFS](bSFS.md).
