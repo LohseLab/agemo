@@ -10,23 +10,31 @@ To calculate the bSFS under a given structured coalescent model first specify th
 
 ## example 
 
-```python
-sample_configuration = [('a', 'a', 'a')]
-btc = agemo.BranchTypeCounter(sample_configuration)
-gfObj = agemo.GfMatrixObject(btc)
+This example demonstrates how to build a structured coalescent model for an isolation with migration model. This is, two populations have descended from the same ancestral population some time in the past. Since that time there has been constant unidirectional migration from one daughter population to the other. In this example we have sampled 2 lineages from each population. Phase and root information is ignored. $ k_{max} $ is set to 2 for all branchtypes.
 
+```python
+import agemo
+
+sample_configuration = [(),('a', 'a'), ('b', 'b')]
+btc = agemo.BranchTypeCounter(sample_configuration)
 num_branchtypes = len(btc)
+
+mig_event = agemo.MigrationEvent(num_variables, 1, 2)
+population_split_event = agemo.PopulationSplitEvent(num_variables+1, 0, 1, 2)
+events = [mig_event, population_split_event]
+gfObj = agemo.GfMatrixObject(btc, events)
+
 mutype_shape = (4,)*num_branchtypes
-mtc = MutationTypeCounter(BranchTypeCounter, mutype_shape)
+mtc = agemo.MutationTypeCounter(btc, mutype_shape)
 
 bsfs_eval = agemo.BSFSEvaluator(gfObj, mtc)
 
-theta = 0.5
+theta = 72/125
 theta_along_branchtypes = np.full(num_branchtypes, theta, dtype=np.float64)
-coalescence_rates = np.array([1.], dtype=np.float64)
-var = np.hstack([coalescence_rates, theta_along_branchtypes])
+params = np.array([1.0, 15/13, 5/2, 21/10])
+var = np.hstack([params, theta_along_branchtypes])
 
-bsfs_array = evaluate(theta, var, time=0)
+bsfs_array = bsfs_eval.evaluate(theta, var, time=10/3)
 ```
 
 # Quick reference
