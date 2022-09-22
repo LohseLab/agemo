@@ -6,11 +6,10 @@ So far, this approach has been used to compute the probabilities of the joint si
 
 The potential of the generating function approach is far from being fully explored. There are lots more features possible. If you would like to contribute please open an issue or start a pull-request on GitHub.
 
-If you use **agemo** in your work please cite
-```{eval-rst}
-.. todo::
-	Create citation
-```
+If you use **agemo** in your work please cite [2022 PLOS Comp paper](https://doi.org/10.1371/journal.pcbi.1010532):
+>Bisschop G (2022) Graph-based algorithms for Laplace transformed coalescence time
+>distributions. PLOS Computational Biology 18(9): e1010532.
+
 
 ```{bibliography}
 ```
