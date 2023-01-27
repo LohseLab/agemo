@@ -573,6 +573,23 @@ class Test_epsilon:
         expected_counts = result_with_marginals * np.sum(sim_counts)
         chisquare(sim_counts, expected_counts)
 
+    def test_IM_to_DIV_simplfication(self, get_IM_gfobject, get_MT_object):
+        gfobj, _, model, BranchTypeCounter = get_IM_gfobject
+        max_k = np.array([2, 2, 2, 2], dtype=int)
+        # shape = tuple(max_k + 2)
+        # variables depending on model: c0, c1, c2, M, E
+        
+        theta = 0.5169514294907595
+        time = 0.17951396341318912
+        var = np.array([1, 1, 4.211515409328338, 0, 0.5169514294907595, 0.5169514294907595, 0.5169514294907595, 0.5169514294907595])
+        
+        for seed in [152, 245555, 1224556, 1, 42]:
+            gfEvalObj = gfeval.BSFSEvaluator(gfobj, get_MT_object, seed)
+            result_with_marginals = gfEvalObj.evaluate(theta, var, time)
+            assert np.isclose(np.sum(result_with_marginals), 1.0)
+            assert np,all(result_with_marginals>=0)
+            assert np,all(result_with_marginals<1)
+
     @pytest.fixture(scope="class")
     def get_BT_object(self):
         sample_list = [(), ("a", "a"), ("b", "b")]

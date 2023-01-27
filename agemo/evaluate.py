@@ -94,7 +94,7 @@ class BSFSEvaluator:
 
     """
 
-    def __init__(self, gfObj, MutationTypeCounter):
+    def __init__(self, gfObj, MutationTypeCounter, seed=None):
         if MutationTypeCounter.phased:
             raise NotImplementedError(
                 "Calculating the bSFS for the fully phased case is still under development."
@@ -109,6 +109,7 @@ class BSFSEvaluator:
                 "BSFSEvaluator can only deal with 1 discrete event."
             )
 
+        self.rng = np.random.default_rng(seed)
         # only works with single delta_idx!
         (
             self.eq_graph_array,
@@ -151,7 +152,7 @@ class BSFSEvaluator:
             include_marginals=True,
         )
 
-    def evaluate(self, theta, var, time=0):
+    def evaluate(self, theta, var, time=0, epsilon=1e-5):
         """
         Calculate the bSFS for a single point in paremeter space.
 
@@ -172,8 +173,8 @@ class BSFSEvaluator:
         try:
             results = self.evaluator(var, time)
         except ZeroDivisionError:
-            var = self.adjust_parameters(var)
-            results = self.evaluator(var, time)
+            adj_var = self.adjust_parameters(var, epsilon)
+            results = self.evaluator(adj_var, time)
         final_result_flat = gfdiff.iterate_eq_graph(
             self.dependency_sequence,
             self.eq_graph_array,
@@ -204,11 +205,15 @@ class BSFSEvaluator:
 
         """
         epsilon = (
-            np.random.randint(low=-100, high=100, size=len(var) - self.num_branchtypes)
+            self.rng.integers(low=-100, high=100, size=len(var) - self.num_branchtypes)
             * factor
         )
-        var[: -self.num_branchtypes] += epsilon
-        return var
+        adj_var = var.copy()
+        adj_var[: -self.num_branchtypes] += epsilon
+        # flip sign when value is negative
+        mask = adj_var[: -self.num_branchtypes] < 0
+        adj_var[: -self.num_branchtypes][mask] *= -1
+        return adj_var
 
     def make_product_subsetdict(self, MutationTypeCounter):
         """
