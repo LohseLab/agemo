@@ -5,8 +5,6 @@
 ```bash
 pip install agemo
 ```
-
-```{eval-rst}
-.. todo::
-  Create conda package for agemo
+```bash
+conda install -c conda-forge agemo
 ```
