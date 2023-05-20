@@ -1,6 +1,6 @@
 # agemo
 
-[![PyPi Downloads](https://static.pepy.tech/personalized-badge/agemo?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/agemo)
+[![PyPi Downloads](https://static.pepy.tech/personalized-badge/agemo?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/agemo) [![Anaconda-Server Badge](https://anaconda.org/conda-forge/agemo/badges/downloads.svg)](https://anaconda.org/conda-forge/agemo) ![License](https://img.shields.io/github/license/LohseLab/agemo) [![Documentation Status](https://readthedocs.org/projects/agemo/badge/?version=latest)](https://agemo.readthedocs.io/en/latest/?badge=latest)
 
 Agemo is an open-source tool with a python API that allows users to generate the Laplace Transform of the coalescence time distribution of a sample with a given demographic history. 
 In addition, agemo provides ways to efficiently query that distribution, by using the fact that its generating function can be represented most simply as a directed graph with all possible ancestral states of the sample as nodes. Past implementations have not made full use of this, relying on computer algebra systems instead of graph traversal to process these recursive expressions.
