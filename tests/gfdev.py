@@ -11,14 +11,10 @@ def get_parameter_dict(coalescence_rates, global_info, sim_config, gf_vars):
     reference_pop = global_info["reference_pop"]
     if gf_vars.get("migration_rate"):
         migration_string = (
-            "me_A_B"
-            if gf_vars["migration_direction"] == [(1, 2)]
-            else "me_B_A"
+            "me_A_B" if gf_vars["migration_direction"] == [(1, 2)] else "me_B_A"
         )
         parameter_dict[gf_vars["migration_rate"]] = sage.all.Rational(
-            2
-            * sim_config[migration_string]
-            * sim_config[f"Ne_{reference_pop}"]
+            2 * sim_config[migration_string] * sim_config[f"Ne_{reference_pop}"]
         )
     if gf_vars.get("exodus_rate"):
         parameter_dict[sage.all.SR.var("T")] = sage.all.Rational(
@@ -61,9 +57,7 @@ def equations_from_matrix_with_inverse(
         if isinstance(inverse, np.ndarray):
             inverse = np.sum(inverse)
         no_inverse = np.prod(
-            gflib.equations_from_matrix(
-                multiplier_array_no_delta[no_delta], var_array
-            )
+            gflib.equations_from_matrix(multiplier_array_no_delta[no_delta], var_array)
         )
         results[idx] = np.prod((inverse, no_inverse))
     return results

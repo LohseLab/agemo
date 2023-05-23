@@ -51,9 +51,7 @@ class Test_aux:
         ],
     )
     def test_coalescence(self, sample_list, check):
-        branchtype_dict = smut.make_branchtype_dict(
-            sample_list, mapping="label"
-        )
+        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
         gfobj = gflib.GfObject(
             sample_list,
             (1, 1, 1),
@@ -96,9 +94,7 @@ class Test_aux:
             sage.all.SR.var("c1"),
             sage.all.SR.var("c2"),
         )
-        branchtype_dict = smut.make_branchtype_dict(
-            sample_list, mapping="label"
-        )
+        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
         gfobj = gflib.GfObject(
             sample_list,
             coalescence_rates,
@@ -140,9 +136,7 @@ class Test_aux:
         ],
     )
     def test_migration(self, sample_list, check):
-        branchtype_dict = smut.make_branchtype_dict(
-            sample_list, mapping="label"
-        )
+        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
         gfobj = gflib.GfObject(
             sample_list,
             (1, 1, 1),
@@ -158,9 +152,7 @@ class Test_aux:
 
     def test_migration_empty(self):
         sample_list = [(), (), ("c", "d")]
-        branchtype_dict = smut.make_branchtype_dict(
-            sample_list, mapping="label"
-        )
+        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
         gfobj = gflib.GfObject(
             sample_list,
             (1, 1, 1),
@@ -175,9 +167,7 @@ class Test_aux:
 
     def test_exodus_empty(self):
         sample_list = [(), (), ("c", "d")]
-        branchtype_dict = smut.make_branchtype_dict(
-            sample_list, mapping="label"
-        )
+        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
         gfobj = gflib.GfObject(
             sample_list,
             (1, 1, 1),
@@ -192,9 +182,7 @@ class Test_aux:
 
     def test_exodus(self):
         sample_list = [(), ("a", "a"), ("c", "d")]
-        branchtype_dict = smut.make_branchtype_dict(
-            sample_list, mapping="label"
-        )
+        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
         exodus_rate = sage.all.SR.var("E")
         gfobj = gflib.GfObject(
             sample_list,
@@ -215,9 +203,7 @@ class Test_aux:
 class Test_gf:
     def test_gf_unrooted(self):
         sample_list = [("a", "a", "b", "b")]
-        branchtype_dict = smut.make_branchtype_dict(
-            sample_list, mapping="unrooted"
-        )
+        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="unrooted")
         gfobj = gflib.GfObject(sample_list, (1,), branchtype_dict)
         result = list(gfobj.make_gf())
         subs_dict = {k: 0 for k in set(branchtype_dict.values())}
@@ -386,7 +372,9 @@ class Test_Simple_Models:
     def test_single_step_exodus(self):
         sample_list = [("a", "a", "b", "b"), ()]
         branch_type_counter = mut.BranchTypeCounter(sample_list)
-        event_list = [eventslib.PopulationSplitEvent(2, 1, 0),]
+        event_list = [
+            eventslib.PopulationSplitEvent(2, 1, 0),
+        ]
         gfobj = gflib.GfMatrixObject(branch_type_counter, event_list)
         multiplier_array, new_state_list = gfobj.gf_single_step(sample_list)
         print("new_state_list:", new_state_list)
@@ -432,13 +420,9 @@ class Test_Simple_Models:
 class Test_Paths:
     def test_paths_pre_laplace(self, return_gf):
         variables_array, (paths_mat, eq_mat), gf_original = return_gf
-        self.equations_pre_laplace(
-            eq_mat, paths_mat, variables_array, gf_original
-        )
+        self.equations_pre_laplace(eq_mat, paths_mat, variables_array, gf_original)
 
-    def equations_pre_laplace(
-        self, eq_mat, paths, variables_array, gf_original
-    ):
+    def equations_pre_laplace(self, eq_mat, paths, variables_array, gf_original):
         print(paths)
         print(eq_mat.shape)
         eqs = np.zeros(len(paths), dtype=object)
@@ -474,7 +458,9 @@ class Test_Paths:
         mutype_labels, max_k = zip(*sorted(k_max.items()))
         # branchtype_dict_mat = mut.make_branchtype_dict_idxs(sample_list, mapping='unrooted', labels=mutype_labels)
         branchtype_dict_mat = gfdev.make_branchtype_dict_idxs_gimble()
-        branch_type_counter = mut.BranchTypeCounter(sample_list, branchtype_dict=branchtype_dict_mat)
+        branch_type_counter = mut.BranchTypeCounter(
+            sample_list, branchtype_dict=branchtype_dict_mat
+        )
         branchtype_dict_chain = smut.make_branchtype_dict(
             sample_list, mapping="unrooted", labels=mutype_labels
         )
@@ -491,17 +477,21 @@ class Test_Paths:
         if migration_rate is not None:
             migration_rate_idx = len(variables_array)
             variables_array.append(migration_rate)
-            event_list.append(eventslib.MigrationEvent(migration_rate_idx, *migration_direction[0]))
+            event_list.append(
+                eventslib.MigrationEvent(migration_rate_idx, *migration_direction[0])
+            )
         if exodus_rate is not None:
             exodus_rate_idx = len(variables_array)
             variables_array.append(exodus_rate)
             *derived, ancestral = exodus_direction[0]
-            event_list.append(eventslib.PopulationSplitEvent(exodus_rate_idx, ancestral, *derived))
+            event_list.append(
+                eventslib.PopulationSplitEvent(exodus_rate_idx, ancestral, *derived)
+            )
         variables_array += [sage.all.SR.var(m) for m in mutype_labels]
         variables_array = np.array(variables_array, dtype=object)
 
         gfobj = gflib.GfMatrixObject(branch_type_counter, event_list)
-        #gfobj = gflib.GfMatrixObject(
+        # gfobj = gflib.GfMatrixObject(
         #    branch_type_counter,
         #    coalescence_rate_idxs,
         #    branchtype_dict_mat,
@@ -509,7 +499,7 @@ class Test_Paths:
         #    exodus_direction=exodus_direction,
         #    migration_rate=migration_rate_idx,
         #    migration_direction=migration_direction,
-        #)
+        # )
         gf_mat = list(gfobj.make_gf())
 
         gfobj2 = gflib.GfObject(

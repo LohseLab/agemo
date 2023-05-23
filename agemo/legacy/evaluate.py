@@ -75,7 +75,7 @@ class GfEvaluator:
         self.ordered_mutype_list = [sage.all.SR.var(mutype) for mutype in mutypes]
         if restrict_to is not None:
             self.restricted = True
-            all_mutation_configurations = mutations.add_marginals_restrict_to(
+            all_mutation_configurations = smut.add_marginals_restrict_to(
                 restrict_to, max_k
             )
         else:
