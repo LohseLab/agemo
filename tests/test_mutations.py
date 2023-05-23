@@ -3,6 +3,7 @@ import pytest
 
 import agemo.mutations as mut
 import agemo.legacy.evaluate as leval
+import agemo.legacy.mutations as smut
 
 
 @pytest.mark.muts
@@ -49,7 +50,7 @@ class Test_mutypetree:
     def test_muts_to_gimble(self):
         gf = 1
         max_k = (2, 2, 2, 2)
-        #root = (0, 0, 0, 0)
+        # root = (0, 0, 0, 0)
         exclude = [
             (2, 3),
         ]
@@ -88,7 +89,7 @@ class Test_mutypetree:
     def test_list_marginal_idxs(self):
         marginals = np.array([(0, 0, 3, 1), (3, 0, 1, 3)], dtype=np.uint8)
         max_k = (2, 2, 2, 2)
-        result = [mut.list_marginal_idxs(m, max_k) for m in marginals]
+        result = [smut.list_marginal_idxs(m, max_k) for m in marginals]
         expected_result = [
             [(0, 0, 0, 1), (0, 0, 1, 1), (0, 0, 2, 1)],
             [
@@ -114,7 +115,7 @@ class Test_mutypetree:
             (1, 0, 0, 0),
         ]
         max_k = (2, 2, 2, 2)
-        result = mut.add_marginals_restrict_to(restrict_to, max_k)
+        result = smut.add_marginals_restrict_to(restrict_to, max_k)
         expected_result = sorted(
             [
                 (0, 0, 0, 1),
@@ -134,3 +135,37 @@ class Test_mutypetree:
             ]
         )
         assert expected_result == result
+
+
+class TestTypeCounter:
+    def test_type_counter(self):
+        tc = mut.BranchTypeCounter(
+            [("a", "a"), ("b", "b")],
+        )
+        assert tc.phased == False
+        assert tc.rooted == False
+        assert tc.labels == ["a", "b", "aa", "ab"]
+        assert tc.samples_per_pop == (2, 2)
+        assert tc.compatibility_check == [set(), set(), {3}, {2}]
+
+    def test_mutype_counter(self):
+        tc = mut.BranchTypeCounter(
+            [("a", "b"), ("c", "d")],
+            phased=True,
+        )
+        mutype_shape = tuple([2 for _ in range(len(tc))])
+        with pytest.raises(ValueError):
+            mc = mut.MutationTypeCounter(tc, mutype_shape)
+
+    def test_mutype_counter2(self):
+        tc = mut.BranchTypeCounter(
+            [("a", "a"), ("b", "b")],
+        )
+        mutype_shape = tuple([2 for _ in range(len(tc))])
+        mc = mut.MutationTypeCounter(tc, mutype_shape)
+        assert len(mc.labels_dict) == 7
+        assert len(mc) == 12
+        assert mc.rooted == False
+        assert mc.phased == False
+        assert mc.BranchTypeCounter == tc
+        assert mc.sample_configuration == [("a", "a"), ("b", "b")]

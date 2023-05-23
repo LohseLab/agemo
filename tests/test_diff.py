@@ -17,6 +17,16 @@ import agemo.legacy.mutations as smuts
 import tests.gfdev as gfdev
 
 
+class TestDotProduct:
+    def test_casc_dot_product(self):
+        rng = np.random.default_rng()
+        A = rng.random(20)
+        B = rng.random(20)
+        assert np, isclose(
+            gfdiff.casc_dot_product(A, B), gfdiff.simple_dot_product(A, B)
+        )
+
+
 @pytest.mark.diff
 @pytest.mark.taylor
 class Test_taylor:
@@ -29,10 +39,7 @@ class Test_taylor:
         result = gfdiff.taylor_coeff_inverse_polynomial(
             denom, var_array[-1], diff_array, num_mutypes, dot_product, (4, 4)
         )
-        # dot_product2 = gfdiff.simple_dot_product(denom, var_array)
-        # result2 = gfdiff.taylor_coeff_inverse_polynomial_legacy(denom, var_array, diff_array, num_mutypes, dot_product2)
         expected = 0.84375
-        print(result)
         assert np.isclose(expected, result)
 
     def test_taylor_polynomial_marginals(self):
@@ -46,11 +53,7 @@ class Test_taylor:
         )
         denom_marg = denom.copy()
         denom_marg[-num_mutypes:] = 0
-        # dot_product2 = gfdiff.simple_dot_product(denom_marg, var_array)
-        # result2 = gfdiff.taylor_coeff_inverse_polynomial_legacy(denom_marg, var_array, (0,0), num_mutypes, dot_product2)
-        print(result)
         expected = 2.0
-        # print(result2)
         assert np.isclose(expected, result)
 
     def test_taylor_exponential(self):
@@ -84,9 +87,7 @@ class Test_taylor:
         mutype_shape = (2, 2)
         mutype_shape_with_marg = tuple(i + 1 for i in mutype_shape)
         size = np.prod(mutype_shape)
-        mutype_array = np.array(
-            [i for i in np.ndindex(mutype_shape)], dtype=np.uint8
-        )
+        mutype_array = np.array([i for i in np.ndindex(mutype_shape)], dtype=np.uint8)
         var_array = np.array([0.1, 0.2, 0.3, 0.3], dtype=np.float64)
         symbolic_var_array = np.array(
             [
@@ -104,9 +105,7 @@ class Test_taylor:
         # 			1: np.array([0,1], dtype=np.uint8),
         # 			2: np.array([0,2], dtype=np.uint8),
         # 			3: np.array([0,1,2,3], dtype=np.uint8)}
-        combined_result = gfdiff.product_f(subsetdict, result).reshape(
-            mutype_shape
-        )
+        combined_result = gfdiff.product_f(subsetdict, result).reshape(mutype_shape)
         # from symbolic eq
         subs_dict = {b: var_array[-1] for b in symbolic_var_array[-2:]}
         symbolic_eq = np.prod(
@@ -150,9 +149,7 @@ class Test_taylor:
         eq_matrix_no_delta = np.delete(eq_matrix, dummy_variable_idx, axis=2)
         mutype_shape = (2, 2)
         mutype_shape_with_marg = tuple(i + 1 for i in mutype_shape)
-        mutype_array = np.array(
-            [i for i in np.ndindex(mutype_shape)], dtype=np.uint8
-        )
+        mutype_array = np.array([i for i in np.ndindex(mutype_shape)], dtype=np.uint8)
         size = np.prod(mutype_shape)
         var_array = np.array([0.1, 0.3, 0.3], dtype=np.float64)
         symbolic_var_array = np.array(
@@ -239,9 +236,7 @@ class Test_taylor:
         eq_matrix_no_delta = np.delete(eq_matrix, dummy_variable_idx, axis=2)
         mutype_shape = (2, 2)
         mutype_shape_with_marg = (3, 3)
-        mutype_array = np.array(
-            [i for i in np.ndindex((2, 2))], dtype=np.uint8
-        )
+        mutype_array = np.array([i for i in np.ndindex((2, 2))], dtype=np.uint8)
         size = 4
         var_array = np.array([0.1, 0.3, 0.3], dtype=np.float64)
         symbolic_var_array = np.array(
@@ -279,9 +274,7 @@ class Test_taylor:
         )(var_array)
         result = gfdiff.product_f(
             subsetdict,
-            np.vstack(
-                (result_inverted_part[None, :], result_non_inverted_part)
-            ),
+            np.vstack((result_inverted_part[None, :], result_non_inverted_part)),
         ).reshape(mutype_shape)
         print("result")
         print(result)
@@ -348,14 +341,17 @@ class Test_collapse_graph:
         )
         adjacency_matrix[np.array([0, 0, 1]), np.array([1, 2, 2])] = 0
         adjacency_matrix[np.array([2]), np.array([3])] = 1
-        adjacency_matrix[
-            np.array([0, 0, 3, 4, 5]), np.array([4, 5, 6, 3, 3])
-        ] = 2
+        adjacency_matrix[np.array([0, 0, 3, 4, 5]), np.array([4, 5, 6, 3, 3])] = 2
         sample_list = [("a", "a"), ("b", "b")]
         btc = gfmuts.BranchTypeCounter(sample_list)
         pse = eventslib.PopulationSplitEvent(2, 0, 1)
-        gfObj = gflib.GfMatrixObject(btc, [pse, ])
-        
+        gfObj = gflib.GfMatrixObject(
+            btc,
+            [
+                pse,
+            ],
+        )
+
         (
             collapsed_graph_array,
             adjacency_matrix_b,
@@ -395,9 +391,7 @@ class Test_collapse_graph:
             ),
         ],
     )
-    def test_graph_with_multiple_endpoints(
-        self, sample_list, exp_graph_array
-    ):
+    def test_graph_with_multiple_endpoints(self, sample_list, exp_graph_array):
         gfobj = self.get_gf_no_mutations(sample_list)
         graph_array, adjacency_matrix, eq_matrix = gfobj.make_graph()
         collapsed_graph_array, *_ = gfobj.collapse_graph(
@@ -411,7 +405,12 @@ class Test_collapse_graph:
     def get_gf_no_mutations(self, sample_list):
         pse = eventslib.PopulationSplitEvent(2, 0, 1)
         btc = gfmuts.BranchTypeCounter(sample_list, rooted=True)
-        gfobj = gflib.GfMatrixObject(btc, [pse,])
+        gfobj = gflib.GfMatrixObject(
+            btc,
+            [
+                pse,
+            ],
+        )
         return gfobj
 
 
@@ -440,9 +439,7 @@ class Test_taylor_single_pop:
         result_with_marginals = result_with_marginals.reshape(shape)
 
         # symbolic derivation
-        ordered_mutype_list = [
-            sage.all.SR.var(f"m_{idx}") for idx in range(1, size)
-        ]
+        ordered_mutype_list = [sage.all.SR.var(f"m_{idx}") for idx in range(1, size)]
         # num_mutypes = len(ordered_mutype_list)
         alt_variable_array = np.hstack(
             (variable_array[:2], np.array(ordered_mutype_list))
@@ -451,7 +448,13 @@ class Test_taylor_single_pop:
 
         print(result_with_marginals)
         exp_result = evaluate_symbolic_equation(
-            gfobj, ordered_mutype_list, max_k, theta, alt_variable_array, time, gfobj.discrete_events[0]
+            gfobj,
+            ordered_mutype_list,
+            max_k,
+            theta,
+            alt_variable_array,
+            time,
+            gfobj.discrete_events[0],
         )
         print(exp_result)
         assert np.allclose(exp_result, result_with_marginals)
@@ -465,7 +468,12 @@ class Test_taylor_single_pop:
 
     def get_gf_no_mutations(self, btc):
         pse = eventslib.PopulationSplitEvent(2, 0, 1)
-        gfobj = gflib.GfMatrixObject(btc, [pse, ])
+        gfobj = gflib.GfMatrixObject(
+            btc,
+            [
+                pse,
+            ],
+        )
         return gfobj
 
 
@@ -578,17 +586,28 @@ class Test_epsilon:
         max_k = np.array([2, 2, 2, 2], dtype=int)
         # shape = tuple(max_k + 2)
         # variables depending on model: c0, c1, c2, M, E
-        
+
         theta = 0.5169514294907595
         time = 0.17951396341318912
-        var = np.array([1, 1, 4.211515409328338, 0, 0.5169514294907595, 0.5169514294907595, 0.5169514294907595, 0.5169514294907595])
-        
+        var = np.array(
+            [
+                1,
+                1,
+                4.211515409328338,
+                0,
+                0.5169514294907595,
+                0.5169514294907595,
+                0.5169514294907595,
+                0.5169514294907595,
+            ]
+        )
+
         for seed in [152, 245555, 1224556, 1, 42]:
             gfEvalObj = gfeval.BSFSEvaluator(gfobj, get_MT_object, seed)
             result_with_marginals = gfEvalObj.evaluate(theta, var, time)
             assert np.isclose(np.sum(result_with_marginals), 1.0)
-            assert np,all(result_with_marginals>=0)
-            assert np,all(result_with_marginals<1)
+            assert np, all(result_with_marginals >= 0)
+            assert np, all(result_with_marginals < 1)
 
     @pytest.fixture(scope="class")
     def get_BT_object(self):
@@ -665,8 +684,8 @@ def get_IM_gfobject_BT(params, btc):
         pse = eventslib.PopulationSplitEvent(num_variables, ancestral, *derived)
         num_variables += 1
         events_list.append(pse)
-        
-    #gfobj = gflib.GfMatrixObject(
+
+    # gfobj = gflib.GfMatrixObject(
     #    btc.sample_configuration,
     #    coalescence_rate_idxs,
     #    btc.labels_dict,
@@ -674,15 +693,13 @@ def get_IM_gfobject_BT(params, btc):
     #    exodus_direction=exodus_direction,
     #    migration_rate=migration_rate_idx,
     #    migration_direction=migration_direction,
-    #)
+    # )
     gfobj = gflib.GfMatrixObject(btc, events_list)
 
     return gfobj, variable_array, model, btc
 
 
-def chisquare(
-    observed, expected, p_th=0.05, recombination=False, all_sims=False
-):
+def chisquare(observed, expected, p_th=0.05, recombination=False, all_sims=False):
     # expected counts need to be larger than 5 for chisquare
     # combining bins with less than 5 counts into one bin.
     obs = np.reshape(observed, -1)
@@ -697,8 +714,8 @@ def chisquare(
     # obs_smaller = np.sum(obs[binning_idxs == 0])
     exp_binned = exp[binning_idxs == 1]
     obs_binned = obs[binning_idxs == 1]
-    #make sure exp_binned and obs_binned sum to same value
-    exp_binned *= (np.sum(obs_binned)/np.sum(exp_binned))
+    # make sure exp_binned and obs_binned sum to same value
+    exp_binned *= np.sum(obs_binned) / np.sum(exp_binned)
     not_zeros = exp_binned > 0
     if sum(not_zeros) < 1:
         assert False  # expected probabilities are all 0

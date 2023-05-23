@@ -190,3 +190,31 @@ def make_branchtype_dict(sample_list, mapping="unrooted", labels=None):
     else:
         ValueError("This branchtype mapping has not been implemented yet.")
     return branchtype_dict
+
+# dealing with marginals
+def list_marginal_idxs(marginal, max_k):
+    marginal_idxs = np.argwhere(marginal > max_k).reshape(-1)
+    shape = np.array(max_k, dtype=np.uint8) + 2
+    max_k_zeros = np.zeros(shape, dtype=np.uint8)
+    slicing = [
+        v if idx not in marginal_idxs else slice(-1)
+        for idx, v in enumerate(marginal[:])
+    ]
+    max_k_zeros[*slicing] = 1
+    return [tuple(idx) for idx in np.argwhere(max_k_zeros)]
+
+
+def add_marginals_restrict_to(restrict_to, max_k):
+    marginal_np = np.array(restrict_to, dtype=np.uint8)
+    marginal_mutypes_idxs = np.argwhere(np.any(marginal_np > max_k, axis=1)).reshape(-1)
+    if marginal_mutypes_idxs.size > 0:
+        # result = []
+        result = [
+            list_marginal_idxs(marginal_np[mut_config_idx], max_k)
+            for mut_config_idx in marginal_mutypes_idxs
+        ]
+        result = list(itertools.chain.from_iterable(result)) + restrict_to
+        result = sorted(set(result))
+    else:
+        return sorted(restrict_to)
+    return result

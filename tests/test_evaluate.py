@@ -91,9 +91,7 @@ all_configs = {
 class Test_gf_simple:
     def test_generate_ETPs(self):
         sample_list = [("a", "b")]
-        branchtype_dict = smut.make_branchtype_dict(
-            sample_list, mapping="label"
-        )
+        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
         theta = 0.5  # this is actually theta/2
         ordered_mutype_list = gflib.sort_mutation_types(branchtype_dict)
         rate_dict = {branchtype: theta for branchtype in ordered_mutype_list}
@@ -103,9 +101,7 @@ class Test_gf_simple:
         max_k = np.array([2, 2])
         all_mutation_configurations = list(mut.return_mutype_configs(max_k))
         root = tuple(0 for _ in max_k)
-        mutype_tree = mut.make_mutype_tree(
-            all_mutation_configurations, root, max_k
-        )
+        mutype_tree = mut.make_mutype_tree(all_mutation_configurations, root, max_k)
         result = smut.make_result_dict_from_mutype_tree_alt(
             gf, mutype_tree, theta, rate_dict, ordered_mutype_list, max_k
         )
@@ -135,9 +131,7 @@ class Test_gf_simple:
             gf, (0, 0), (1, 1), (2, 2), ordered_mutype_list, marginals
         )
         probk = smut.eval_equation(probk_deriv, theta, ratedict, mucounts, 165)
-        assert float(probk) == float(
-            1 / 2 * (2 * theta) ** 2 / (2 * theta + 1) ** 3
-        )
+        assert float(probk) == float(1 / 2 * (2 * theta) ** 2 / (2 * theta + 1) ** 3)
 
 
 @pytest.mark.zero_division
@@ -171,8 +165,7 @@ class Test_zero_division:
             sage.all.SR.var("c2"),
         )
         coal_rates_values = {
-            c: sage.all.Rational(v)
-            for c, v in zip(coalescence_rates, (3, 1, 3))
+            c: sage.all.Rational(v) for c, v in zip(coalescence_rates, (3, 1, 3))
         }
         parameter_dict = {
             sage.all.SR.var("M"): sage.all.Rational(2),
@@ -200,8 +193,7 @@ class Test_zero_division:
             sage.all.SR.var("c2"),
         )
         coal_rates_values = {
-            c: sage.all.Rational(v)
-            for c, v in zip(coalescence_rates, (1, 1, 1))
+            c: sage.all.Rational(v) for c, v in zip(coalescence_rates, (1, 1, 1))
         }
         parameter_dict = {
             sage.all.SR.var("M"): sage.all.Rational(0),
@@ -233,16 +225,12 @@ class Test_to_gimble:
         config = all_configs[model]
         config["sim_config"] = config["sim_configs"][0]
         del config["sim_configs"]
-        coalescence_rates = tuple(
-            sage.all.SR.var(c) for c in ["c0", "c1", "c2"]
-        )
+        coalescence_rates = tuple(sage.all.SR.var(c) for c in ["c0", "c1", "c2"])
         migration_rate = config["gf_vars"].get("migration_rate")
         migration_direction = config["gf_vars"].get("migration_direction")
         exodus_rate = config["gf_vars"].get("exodus_rate")
         exodus_direction = config["gf_vars"].get("exodus_direction")
-        mutype_labels, max_k = zip(
-            *sorted(config["global_info"]["k_max"].items())
-        )
+        mutype_labels, max_k = zip(*sorted(config["global_info"]["k_max"].items()))
         gf = leval.get_gf(
             config["gf_vars"]["sample_list"],
             coalescence_rates,
