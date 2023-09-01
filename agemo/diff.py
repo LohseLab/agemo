@@ -140,7 +140,7 @@ def series_product(arr1, arr2, subsetdict):
 
 
 # making subsetdict
-@numba.jit(
+@numba.njit(
     [
         numba.int64(numba.int64[:], numba.int64[:]),
         numba.int64(numba.uint64[:], numba.uint64[:]),
