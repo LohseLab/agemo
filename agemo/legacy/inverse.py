@@ -1,25 +1,25 @@
-import sage.all
+import sympy
 
 # processing generating function: inverse laplace
-def inverse_laplace(equation, dummy_variable):
+def inverse_laplace_sympy(equation, dummy_variable):
     return (
-        sage.all.inverse_laplace(
+        sympy.integrals.transforms.inverse_laplace_transform(
             subequation / dummy_variable,
             dummy_variable,
-            sage.all.SR.var("T", domain="real"),
-            algorithm="giac",
+            sympy.symbols("T", real=True, positive=True),
+            noconds=True
         )
         for subequation in equation
     )
 
 
-def return_inverse_laplace(equation, dummy_variable):
+def return_inverse_laplace_sympy(equation, dummy_variable, T):
     if dummy_variable is not None:
-        return sage.all.inverse_laplace(
+        return sympy.integrals.transforms.inverse_laplace_transform(
             equation / dummy_variable,
             dummy_variable,
-            sage.all.SR.var("T", domain="real"),
-            algorithm="giac",
+            T,
+            noconds=True
         )
     else:
         return equation

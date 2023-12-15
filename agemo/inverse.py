@@ -1,5 +1,5 @@
 import numpy as np
-
+import sympy
 
 def inverse_laplace_single_event(multiplier_array, var_array, time, delta_in_nom_list):
     """
@@ -49,7 +49,7 @@ def inverse_laplace_single_event(multiplier_array, var_array, time, delta_in_nom
         # return leading_constants * inverse_laplace_PFE(-poles, multiplicities, time, binom_coefficients, factorials, use_numba=False)
     else:
         # REGULAR CASE
-        exp_nom = np.exp(-constants_denom * time)
+        exp_nom = sympy.exp(-constants_denom * time)
         signs = np.ones(constants_nom.shape[0], dtype=np.int8)
         signs_idxs = np.arange(signs.size, dtype=np.int8)
         signs = np.negative(

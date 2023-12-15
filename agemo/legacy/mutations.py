@@ -1,6 +1,8 @@
 import itertools
+import mpmath
 import numpy as np
-import sage.all
+import sympy
+
 import agemo.gflib as gflib
 
 
@@ -59,24 +61,24 @@ def generate_equation(equation, parent, node, max_k, ordered_mutype_list, margin
     else:
         relative_config = [b - a for a, b in zip(parent, node)]
         partial = single_partial(ordered_mutype_list, relative_config)
-        diff = sage.all.diff(equation, partial)
+        diff = equation.diff(partial)
         return diff
 
-
-def eval_equation(derivative, theta, ratedict, numeric_mucounts, precision):
+@mpmath.workdps(100)
+def eval_equation(derivative, theta, ratedict, numeric_mucounts):
     mucount_total = np.sum(numeric_mucounts)
     mucount_fact_prod = np.prod(
         [np.math.factorial(count) for count in numeric_mucounts]
     )
     # mucount_fact_prod = np.prod(factorials[numeric_mucounts])
-    return sage.all.RealField(precision)(
+    return mpmath.mpf(
         (-1 * theta) ** (mucount_total) / mucount_fact_prod * derivative.subs(ratedict)
     )
 
 
 # alternative make_result using depth first
 def depth_first_mutypes(
-    max_k, labels, eq, theta, rate_dict, exclude=None, precision=165
+    max_k, labels, eq, theta, rate_dict, exclude=None
 ):
     # factorials = np.cumprod(np.arange(1, np.max(max_k)+1))
     # factorials = np.hstack((1,factorials))
@@ -101,10 +103,8 @@ def depth_first_mutypes(
                 mucounts = np.array(
                     [m for m, max_k_m in zip(new_mutype, max_k) if m <= max_k_m]
                 )
-                temp = eval_equation(new_eq, theta, rate_dict, mucounts, precision)
-                # temp = eval_equation(new_eq, theta, rate_dict, mucounts, factorials, precision)
+                temp = eval_equation(new_eq, theta, rate_dict, mucounts)
                 result[new_mutype] = temp
-                # result[mutype] = eval_equation(eq, theta, rate_dict, mucounts, precision)
 
     return result
 
@@ -119,7 +119,7 @@ def single_step_df_mutypes_diff(mutype, label, k, max_k, eq, theta, exclude):
         temp = list(mutype)
         for i in range(1, max_k + 1):
             temp[k] = i
-            new_eq = sage.all.diff(new_eq, label)
+            new_eq = new_eq.diff(label)
             yield (tuple(temp), k - 1, new_eq.subs(subsdict))
         # for i==max_k+1
         subsdict[label] = 0
@@ -152,7 +152,7 @@ def make_branchtype_dict(sample_list, mapping="unrooted", labels=None):
     all_branchtypes = list(gflib.flatten(sample_list))
     branches = [
         branchtype
-        for branchtype in gflib.powerset(all_branchtypes)
+        for branchtype in powerset(all_branchtypes)
         if len(branchtype) > 0 and len(branchtype) < len(all_branchtypes)
     ]
     if mapping.startswith("label"):
@@ -161,12 +161,12 @@ def make_branchtype_dict(sample_list, mapping="unrooted", labels=None):
                 labels
             ), "number of labels does not match number of branchtypes"
             branchtype_dict = {
-                branchtype: sage.all.SR.var(label)
+                branchtype: sympy.symbols(label, positive=True, real=True)
                 for branchtype, label in zip(branches, labels)
             }
         else:
             branchtype_dict = {
-                branchtype: sage.all.SR.var(f"z_{branchtype}")
+                branchtype: sympt.symbols(f"z_{branchtype}", positive=True, real=True)
                 for branchtype in branches
             }
     elif mapping == "unrooted":  # this needs to be extended to the general thing!
@@ -174,18 +174,18 @@ def make_branchtype_dict(sample_list, mapping="unrooted", labels=None):
             labels = ["m_1", "m_2", "m_3", "m_4"]
         assert set(all_branchtypes) == {"a", "b"}
         branchtype_dict = dict()
-        for branchtype in gflib.powerset(all_branchtypes):
+        for branchtype in powerset(all_branchtypes):
             if len(branchtype) == 0 or len(branchtype) == len(all_branchtypes):
                 pass
             elif branchtype in ("abb", "a"):
-                branchtype_dict[branchtype] = sage.all.SR.var(labels[1])  # hetA
+                branchtype_dict[branchtype] = sympy.symbols(labels[1], positive=True, real=True)  # hetA
             elif branchtype in ("aab", "b"):
-                branchtype_dict[branchtype] = sage.all.SR.var(labels[0])  # hetB
+                branchtype_dict[branchtype] = sympy.symbols(labels[0], positive=True, real=True)  # hetB
             elif branchtype == "ab":
-                branchtype_dict[branchtype] = sage.all.SR.var(labels[2])  # hetAB
+                branchtype_dict[branchtype] = sympy.symbols(labels[2], positive=True, real=True)  # hetAB
             else:
-                branchtype_dict[branchtype] = sage.all.SR.var(
-                    labels[3]
+                branchtype_dict[branchtype] = sympy.symbols(
+                    labels[3], positive=True, real=True
                 )  # fixed difference
     else:
         ValueError("This branchtype mapping has not been implemented yet.")
@@ -195,12 +195,13 @@ def make_branchtype_dict(sample_list, mapping="unrooted", labels=None):
 def list_marginal_idxs(marginal, max_k):
     marginal_idxs = np.argwhere(marginal > max_k).reshape(-1)
     shape = np.array(max_k, dtype=np.uint8) + 2
-    max_k_zeros = np.zeros(shape, dtype=np.uint8)
-    slicing = [
+    max_k_zeros = np.zeros(shape, dtype=np.uint8)    
+    #for idx, v in enumerate(marginal[:]):
+    slicing = tuple([
         v if idx not in marginal_idxs else slice(-1)
         for idx, v in enumerate(marginal[:])
-    ]
-    max_k_zeros[*slicing] = 1
+    ])
+    max_k_zeros[slicing] = 1
     return [tuple(idx) for idx in np.argwhere(max_k_zeros)]
 
 

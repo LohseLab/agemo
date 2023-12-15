@@ -3,9 +3,8 @@ name: agemo_dev
 channels:
   - conda-forge
 dependencies:
-  - python>=3.7
+  - python>=3.8
   - numpy>=1.17
   - numba>=0.54.0
   - pytest>=6.2.5
-  - sage>=9.2
-  - maxima>=5.45.0
+  - sympy

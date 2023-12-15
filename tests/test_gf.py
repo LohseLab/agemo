@@ -1,220 +1,19 @@
 import numpy as np
 import pytest
-import sage.all
+import sympy
 
 import agemo.gflib as gflib
 import agemo.mutations as mut
 import agemo.events as eventslib
+
 import agemo.legacy.mutations as smut
+import agemo.legacy.gflib as gfleg
 
 import tests.gfdev as gfdev
 
-# testing non-matrix representation of gf
-
-
-@pytest.mark.aux
-class Test_aux:
-    @pytest.mark.parametrize(
-        "input_lineages, to_join, expected",
-        [
-            (("a", "b", "c", "a"), ("a", "b"), ("a", "ab", "c")),
-            (("a", "b", "b"), ("b", "b"), ("a", "bb")),
-            (("ab", "ab"), ("ab", "ab"), ("aabb",)),
-        ],
-    )
-    def test_coalesce_lineages(self, input_lineages, to_join, expected):
-        e = eventslib.CoalescenceEvent(0)
-        output_lineages = e.coalesce_lineages(input_lineages, to_join)
-        assert sorted(output_lineages) == sorted(expected)
-
-    @pytest.mark.parametrize(
-        "sample_list, check",
-        [
-            (
-                ([(), ("a", "b"), ("c", "d")]),
-                (
-                    [
-                        (1, ((), ("ab",), ("c", "d"))),
-                        (1, ((), ("a", "b"), ("cd",))),
-                    ]
-                ),
-            ),
-            (
-                ([("a", "b", "b"), (), ("a",)]),
-                (
-                    [
-                        (2, (("ab", "b"), (), ("a",))),
-                        (1, (("a", "bb"), (), ("a",))),
-                    ]
-                ),
-            ),
-        ],
-    )
-    def test_coalescence(self, sample_list, check):
-        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
-        gfobj = gflib.GfObject(
-            sample_list,
-            (1, 1, 1),
-            branchtype_dict,
-            exodus_rate=1,
-            exodus_direction=[(1, 2, 0)],
-        )
-        result = list(gfobj.coalescence_events(gfobj.sample_list))
-        print("result:", result)
-        print("check:", check)
-        for test, truth in zip(result, check):
-            assert all(test[i] == truth[i] for i in range(len(test)))
-
-    @pytest.mark.parametrize(
-        "sample_list, check",
-        [
-            (
-                ([(), ("a", "b"), ("c", "d")]),
-                (
-                    [
-                        (sage.all.var("c1"), ((), ("ab",), ("c", "d"))),
-                        (sage.all.SR.var("c2"), ((), ("a", "b"), ("cd",))),
-                    ]
-                ),
-            ),
-            (
-                ([("a", "b", "b"), (), ("a",)]),
-                (
-                    [
-                        (2 * sage.all.var("c0"), (("ab", "b"), (), ("a",))),
-                        (1 * sage.all.SR.var("c0"), (("a", "bb"), (), ("a",))),
-                    ]
-                ),
-            ),
-        ],
-    )
-    def test_coalescence_rates(self, sample_list, check):
-        coalescence_rates = (
-            sage.all.SR.var("c0"),
-            sage.all.SR.var("c1"),
-            sage.all.SR.var("c2"),
-        )
-        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
-        gfobj = gflib.GfObject(
-            sample_list,
-            coalescence_rates,
-            branchtype_dict,
-            exodus_rate=1,
-            exodus_direction=[(1, 2, 0)],
-        )
-        result = list(gfobj.coalescence_events(gfobj.sample_list))
-        print("result:", result)
-        print("check:", check)
-        for test, truth in zip(result, check):
-            assert all(test[i] == truth[i] for i in range(len(test)))
-
-    @pytest.mark.parametrize(
-        "sample_list, check",
-        [
-            (
-                ([(), ("a", "b"), ("c", "d")]),
-                (
-                    [
-                        (1, ((), ("b",), ("a", "c", "d"))),
-                        (1, ((), ("a",), ("b", "c", "d"))),
-                    ]
-                ),
-            ),
-            (
-                ([(), ("a", "a"), ("b", "b")]),
-                ([(2, ((), ("a",), ("a", "b", "b")))]),
-            ),
-            (
-                ([(), ("a", "a", "c", "c"), ("b", "b")]),
-                (
-                    [
-                        (2, ((), ("a", "c", "c"), ("a", "b", "b"))),
-                        (2, ((), ("a", "a", "c"), ("b", "b", "c"))),
-                    ]
-                ),
-            ),
-        ],
-    )
-    def test_migration(self, sample_list, check):
-        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
-        gfobj = gflib.GfObject(
-            sample_list,
-            (1, 1, 1),
-            branchtype_dict,
-            migration_rate=1,
-            migration_direction=[(1, 2)],
-        )
-        result = list(gfobj.migration_events(gfobj.sample_list))
-        print("result:", result)
-        print("check:", check)
-        for test, truth in zip(result, check):
-            assert all(test[i] == truth[i] for i in range(len(test)))
-
-    def test_migration_empty(self):
-        sample_list = [(), (), ("c", "d")]
-        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
-        gfobj = gflib.GfObject(
-            sample_list,
-            (1, 1, 1),
-            branchtype_dict,
-            migration_rate=1,
-            migration_direction=[(1, 2)],
-        )
-        result = list(gfobj.migration_events(gfobj.sample_list))
-        print("result:", result)
-        assert isinstance(result, list)
-        assert len(result) == 0
-
-    def test_exodus_empty(self):
-        sample_list = [(), (), ("c", "d")]
-        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
-        gfobj = gflib.GfObject(
-            sample_list,
-            (1, 1, 1),
-            branchtype_dict,
-            migration_rate=1,
-            migration_direction=[(1, 2)],
-        )
-        result = list(gfobj.exodus_events(gfobj.sample_list))
-        print("result:", result)
-        assert isinstance(result, list)
-        assert len(result) == 0
-
-    def test_exodus(self):
-        sample_list = [(), ("a", "a"), ("c", "d")]
-        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="label")
-        exodus_rate = sage.all.SR.var("E")
-        gfobj = gflib.GfObject(
-            sample_list,
-            (1, 1, 1),
-            branchtype_dict,
-            exodus_rate=exodus_rate,
-            exodus_direction=[(1, 2, 0)],
-        )
-        result = list(gfobj.exodus_events(gfobj.sample_list))
-        check = [(exodus_rate, (("a", "a", "c", "d"), (), ()))]
-        print("result:", result)
-        print("check:", check)
-        for test, truth in zip(result, check):
-            assert all(test[i] == truth[i] for i in range(len(test)))
-
-
-@pytest.mark.gf
-class Test_gf:
-    def test_gf_unrooted(self):
-        sample_list = [("a", "a", "b", "b")]
-        branchtype_dict = smut.make_branchtype_dict(sample_list, mapping="unrooted")
-        gfobj = gflib.GfObject(sample_list, (1,), branchtype_dict)
-        result = list(gfobj.make_gf())
-        subs_dict = {k: 0 for k in set(branchtype_dict.values())}
-        assert sum([x.substitute(subs_dict) for x in result]) == 1
-
-
-# testing matrix representation
-
 
 @pytest.mark.matrix_aux
-class Test_matrix_aux:
+class TestMatrixAux:
     @pytest.mark.parametrize(
         "sample_list, check",
         [
@@ -242,8 +41,6 @@ class Test_matrix_aux:
         ces = eventslib.CoalescenceEventsSuite(len(sample_list))
         result = ces._single_step(sample_list)
 
-        print("result:", result)
-        print("check:", check)
         for test, truth in zip(result, check):
             assert all(test[i] == truth[i] for i in range(len(test)))
 
@@ -274,8 +71,6 @@ class Test_matrix_aux:
         coalescence_rates = (0, 0, 1)
         ces = eventslib.CoalescenceEventsSuite(len(sample_list), coalescence_rates)
         result = ces._single_step(sample_list)
-        print("result:", result)
-        print("check:", check)
         for test, truth in zip(result, check):
             assert all(test[i] == truth[i] for i in range(len(test)))
 
@@ -310,8 +105,6 @@ class Test_matrix_aux:
         migration_idx = 3
         mige = eventslib.MigrationEvent(migration_idx, 0, 1)
         result = mige._single_step(sample_list)
-        print("result:", result)
-        print("check:", check)
         for test, truth in zip(result, check):
             assert all(test[i] == truth[i] for i in range(len(test)))
 
@@ -320,7 +113,6 @@ class Test_matrix_aux:
         migration_idx = 3
         mige = eventslib.MigrationEvent(migration_idx, 0, 1)
         result = mige._single_step(sample_list)
-        print("result:", result)
         assert isinstance(result, list)
         assert len(result) == 0
 
@@ -329,7 +121,6 @@ class Test_matrix_aux:
         split_idx = 4
         pse = eventslib.PopulationSplitEvent(split_idx, 0, 1)
         result = pse._single_step(sample_list)
-        print("result:", result)
         assert isinstance(result, list)
         assert len(result) == 0
 
@@ -339,22 +130,17 @@ class Test_matrix_aux:
         pse = eventslib.PopulationSplitEvent(split_idx, 0, 1, 2)
         result = pse._single_step(sample_list)
         check = [(4, 1, (("a", "a", "c", "d"), (), ()))]
-        print("result:", result)
-        print("check:", check)
         for test, truth in zip(result, check):
             assert all(test[i] == truth[i] for i in range(len(test)))
 
 
 @pytest.mark.matrix_simple
-class Test_Simple_Models:
+class TestSimpleModels:
     def test_single_step(self):
         sample_list = [("a", "a", "b", "b")]
         branch_type_counter = mut.BranchTypeCounter(sample_list)
         gfobj = gflib.GfMatrixObject(branch_type_counter)
         multiplier_array, new_state_list = gfobj.gf_single_step(sample_list)
-        print("new_state_list:", new_state_list)
-        print("multiplier_array:")
-        print(multiplier_array)
         expected_new_state_list = [
             (("aa", "b", "b"),),
             (("a", "ab", "b"),),
@@ -377,9 +163,6 @@ class Test_Simple_Models:
         ]
         gfobj = gflib.GfMatrixObject(branch_type_counter, event_list)
         multiplier_array, new_state_list = gfobj.gf_single_step(sample_list)
-        print("new_state_list:", new_state_list)
-        print("multiplier_array:")
-        print(multiplier_array)
         expected_new_state_list = [
             (("aa", "b", "b"), ()),
             (("a", "ab", "b"), ()),
@@ -402,9 +185,6 @@ class Test_Simple_Models:
         event_list = [eventslib.PopulationSplitEvent(2, 1, 0)]
         gfobj = gflib.GfMatrixObject(branch_type_counter, event_list)
         multiplier_array, new_state_list = gfobj.gf_single_step(sample_list)
-        print("new_state_list:", new_state_list)
-        print("multiplier_array:")
-        print(multiplier_array)
         # expected_new_state_list = [
         #    (("aa"), ("b", "b")),
         #    (("a", "a"), ("bb")),
@@ -417,30 +197,27 @@ class Test_Simple_Models:
 
 
 @pytest.mark.from_matrix
-class Test_Paths:
+class TestPaths:
     def test_paths_pre_laplace(self, return_gf):
         variables_array, (paths_mat, eq_mat), gf_original = return_gf
         self.equations_pre_laplace(eq_mat, paths_mat, variables_array, gf_original)
 
     def equations_pre_laplace(self, eq_mat, paths, variables_array, gf_original):
-        print(paths)
-        print(eq_mat.shape)
         eqs = np.zeros(len(paths), dtype=object)
         for i, path in enumerate(paths):
             ma = eq_mat[np.array(path, dtype=int)]
             eqs[i] = np.prod(gflib.equations_from_matrix(ma, variables_array))
-        # gf_from_paths = sum(eqs)
 
     @pytest.fixture(
         scope="class",
         params=[
-            ([(1, 2, 0)], sage.all.SR.var("E"), None, None),
-            (None, None, [(2, 1)], sage.all.SR.var("M")),
+            ([(1, 2, 0)], sympy.symbols('E', real=True, positive=True), None, None),
+            (None, None, [(2, 1)], sympy.symbols('M', real=True, positive=True)),
             (
                 [(1, 2, 0)],
-                sage.all.SR.var("E"),
+                sympy.symbols('E', real=True, positive=True),
                 [(2, 1)],
-                sage.all.SR.var("M"),
+                sympy.symbols('M', real=True, positive=True),
             ),
         ],
         ids=["DIV", "MIG", "IM"],
@@ -449,9 +226,9 @@ class Test_Paths:
         sample_list = [(), ("a", "a"), ("b", "b")]
         # ancestral_pop = 0
         coalescence_rates = (
-            sage.all.SR.var("c0"),
-            sage.all.SR.var("c1"),
-            sage.all.SR.var("c2"),
+            sympy.symbols('c0', real=True, positive=True),
+            sympy.symbols('c1', real=True, positive=True),
+            sympy.symbols('c2', real=True, positive=True),
         )
         coalescence_rate_idxs = (0, 1, 2)
         k_max = {"m_1": 2, "m_2": 2, "m_3": 2, "m_4": 2}
@@ -487,22 +264,14 @@ class Test_Paths:
             event_list.append(
                 eventslib.PopulationSplitEvent(exodus_rate_idx, ancestral, *derived)
             )
-        variables_array += [sage.all.SR.var(m) for m in mutype_labels]
+        m = sympy.symbols('m', real=True, positive=True)
+        variables_array += [m for _ in mutype_labels]
         variables_array = np.array(variables_array, dtype=object)
 
         gfobj = gflib.GfMatrixObject(branch_type_counter, event_list)
-        # gfobj = gflib.GfMatrixObject(
-        #    branch_type_counter,
-        #    coalescence_rate_idxs,
-        #    branchtype_dict_mat,
-        #    exodus_rate=exodus_rate_idx,
-        #    exodus_direction=exodus_direction,
-        #    migration_rate=migration_rate_idx,
-        #    migration_direction=migration_direction,
-        # )
         gf_mat = list(gfobj.make_gf())
 
-        gfobj2 = gflib.GfObject(
+        gfobj2 = gfleg.GfObject(
             sample_list,
             coalescence_rates,
             branchtype_dict_chain,
@@ -514,3 +283,89 @@ class Test_Paths:
         gf_original = sum(gfobj2.make_gf())
 
         return (variables_array, gf_mat, gf_original)
+
+@pytest.mark.diff
+@pytest.mark.collapse
+class TestCollapseGraph:
+    def test_collapse_graph(self):
+        graph_array = ((1, 2, 4, 5), (2,), (3,), (6,), (3,), (3,), tuple())
+        eq_matrix = np.array(
+            [[[0, 0, 0], [0, 0, 1]], [[0, 0, 1], [0, 0, 1]], [[0, 0, 0], [0, 0, 0]]],
+            dtype=np.uint8,
+        )
+        adjacency_matrix = np.full(
+            (len(graph_array), len(graph_array)), fill_value=255, dtype=np.int8
+        )
+        adjacency_matrix[np.array([0, 0, 1]), np.array([1, 2, 2])] = 0
+        adjacency_matrix[np.array([2]), np.array([3])] = 1
+        adjacency_matrix[np.array([0, 0, 3, 4, 5]), np.array([4, 5, 6, 3, 3])] = 2
+        sample_list = [("a", "a"), ("b", "b")]
+        btc = mut.BranchTypeCounter(sample_list)
+        pse = eventslib.PopulationSplitEvent(2, 0, 1)
+        gfObj = gflib.GfMatrixObject(
+            btc,
+            [
+                pse,
+            ],
+        )
+
+        (
+            collapsed_graph_array,
+            adjacency_matrix_b,
+            eq_array,
+            to_invert_array,
+        ) = gfdev.collapse_graph(gfObj, graph_array, adjacency_matrix, eq_matrix)
+        expected_graph_array = ((1, 2, 5, 6), (3,), (3,), (4,), (), (4,), (4,))
+        expected_to_invert_array = np.zeros(9, dtype=bool)
+        expected_to_invert_array[-2:] = 1
+        expected_eq_array = (
+            (2,),
+            (2,),
+            (2,),
+            (2,),
+            (2,),
+            (2,),
+            (2,),
+            (0, 1),
+            (0, 0, 1),
+        )
+
+        def compare(ar1, ar2):
+            for a, b in zip(ar1, ar2):
+                assert np.array_equal(np.array(a), np.array(b))
+
+        compare(expected_graph_array, collapsed_graph_array)
+        compare(expected_eq_array, eq_array)
+        assert np.array_equal(expected_to_invert_array, to_invert_array)
+
+    @pytest.mark.parametrize(
+        "sample_list, exp_graph_array",
+        [
+            ([(), ("a", "a")], [(1, 3), (2,), (), ()]),
+            (
+                [(), ("a", "a", "a")],
+                [(1, 4, 5), (2,), (3,), (), (3,), ()],
+            ),
+        ],
+    )
+    def test_graph_with_multiple_endpoints(self, sample_list, exp_graph_array):
+        gfobj = self.get_gf_no_mutations(sample_list)
+        graph_array, adjacency_matrix, eq_matrix = gfdev.make_graph(gfobj)
+        collapsed_graph_array, *_ = gfdev.collapse_graph(
+            gfobj, graph_array, adjacency_matrix, eq_matrix
+        )
+        print(exp_graph_array)
+        print(collapsed_graph_array)
+        for o, e in zip(collapsed_graph_array, exp_graph_array):
+            assert o == e
+
+    def get_gf_no_mutations(self, sample_list):
+        pse = eventslib.PopulationSplitEvent(2, 0, 1)
+        btc = mut.BranchTypeCounter(sample_list, rooted=True)
+        gfobj = gflib.GfMatrixObject(
+            btc,
+            [
+                pse,
+            ],
+        )
+        return gfobj
