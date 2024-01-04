@@ -1,9 +1,11 @@
 import numpy as np
-import sage.all
 import sys
+import sympy
+import mpmath
 import agemo.gflib as gflib
 import agemo.mutations as mutations
 
+from . import gflib as gfleg
 from . import mutations as smut
 from . import inverse
 
@@ -18,13 +20,11 @@ def _get_gfObj(
     exodus_direction=None,
     exodus_rate=None,
 ):
-    # labels = gflib.sort_mutation_types(list(k_max.keys()))
-    # labels = sorted_mutypes
     branchtype_dict = smut.make_branchtype_dict(
         sample_list, mapping="unrooted", labels=mutype_labels
     )
 
-    gfobj = gflib.GfObject(
+    gfobj = gfleg.GfObject(
         sample_list,
         coalescence_rates,
         branchtype_dict,
@@ -72,7 +72,7 @@ class GfEvaluator:
         self.gf = gf
         self.max_k = np.array(max_k)
         self.ETPs_shape = tuple(k + 2 for k in max_k)
-        self.ordered_mutype_list = [sage.all.SR.var(mutype) for mutype in mutypes]
+        self.ordered_mutype_list = [sympy.symbols(mutype, real=True, positive=True) for mutype in mutypes]
         if restrict_to is not None:
             self.restricted = True
             all_mutation_configurations = smut.add_marginals_restrict_to(
@@ -95,17 +95,18 @@ class GfEvaluator:
         )
         self.precision = precision
 
+    @mpmath.workdps(100)
     def _subs_params(self, parameter_dict, epsilon):
         try:
             gf = sum(self.gf).subs(parameter_dict)
         except ValueError as e:
             if "division by zero" in str(e):
-                M = sage.all.SR.var("M")
+                M = sympy.symbols("M", real=True, positive=True)
                 if parameter_dict[M] == 0:
                     gf = sum(self.gf).subs(M=0)
                     gf = gf.subs(parameter_dict)
                 else:
-                    epsilon = sage.all.Rational(epsilon)
+                    epsilon = mpmath.mpf(epsilon)
                     parameter_dict[M] += parameter_dict[M] * epsilon
                     gf = sum(self.gf).subs(parameter_dict)
             else:

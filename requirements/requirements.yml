@@ -3,6 +3,6 @@ name: agemo_env
 channels:
   - conda-forge
 dependencies:
-  - python>=3.7
+  - python>=3.8
   - numpy>=1.17
   - numba>=0.54.0
