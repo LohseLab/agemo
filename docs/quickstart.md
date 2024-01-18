@@ -32,7 +32,7 @@ sample_configuration = [(, ), ('a', 'a'), ('b', 'b')]
 btc = agemo.BranchTypeCounter(sample_configuration)
 idx = len(sample_configuration)
 events_list = [agemo.PopulationSplitEvent(idx, 0, 1, 2)]
-gfObject = agemo.GFMatrixObject(btc, events_list)
+gfObject = agemo.GfMatrixObject(btc, events_list)
 ```
 From here we can use the {meth}`.GfMatrixObject.make_gf` method to generate the Laplace transform. The result is a list of lists as well as an equation_array. The list contains all paths through the coalescent state space graph, with each sublist representing a single path. Index $i$ within a sublist points at equation_array[$i$] which contains the coefficients representing equation $i$. See {ref}`sec_equation_array` on how to interpret these coefficients.
 
