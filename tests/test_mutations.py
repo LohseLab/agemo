@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 
 import agemo.mutations as mut
@@ -46,14 +45,13 @@ class TestMutypetree:
         assert mutype_tree == mutype_tree_single_digit
 
 
-
 class TestTypeCounter:
     def test_type_counter(self):
         tc = mut.BranchTypeCounter(
             [("a", "a"), ("b", "b")],
         )
-        assert tc.phased == False
-        assert tc.rooted == False
+        assert not tc.phased
+        assert not tc.rooted
         assert tc.labels == ["a", "b", "aa", "ab"]
         assert tc.samples_per_pop == (2, 2)
         assert tc.compatibility_check == [set(), set(), {3}, {2}]
@@ -65,7 +63,7 @@ class TestTypeCounter:
         )
         mutype_shape = tuple([2 for _ in range(len(tc))])
         with pytest.raises(ValueError):
-            mc = mut.MutationTypeCounter(tc, mutype_shape)
+            mut.MutationTypeCounter(tc, mutype_shape)
 
     def test_mutype_counter2(self):
         tc = mut.BranchTypeCounter(
@@ -75,7 +73,7 @@ class TestTypeCounter:
         mc = mut.MutationTypeCounter(tc, mutype_shape)
         assert len(mc.labels_dict) == 7
         assert len(mc) == 12
-        assert mc.rooted == False
-        assert mc.phased == False
+        assert not mc.rooted
+        assert not mc.phased
         assert mc.BranchTypeCounter == tc
         assert mc.sample_configuration == [("a", "a"), ("b", "b")]

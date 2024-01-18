@@ -1,5 +1,6 @@
 import collections
 import itertools
+
 import numpy as np
 
 import agemo.events as eventslib
@@ -43,11 +44,14 @@ def paths_from_visited_node(graph, node, equation_dict, path):
 
 class GfMatrixObject:
     """
+    Central object containing all information on the generating function.
 
-    :param branch_type_counter: Object describing all branchtypes for which to return
-       the Laplace transformed joint distribution of coalescence times.
+    :param branch_type_counter: Object describing all branchtypes for
+        which to return the Laplace transformed joint distribution of
+        coalescence times.
     :type branch_type_counter: class `agemo.BranchTypeCounter`
-    :param events: List of events defining the structured coalescent model, defaults to None.
+    :param events: List of events defining the structured coalescent
+        model, defaults to None.
     :type events: list(class `agemo.Event`), optional
 
     """
@@ -57,7 +61,6 @@ class GfMatrixObject:
         branch_type_counter,
         events=None,
     ):
-
         self.sample_list = branch_type_counter.sample_configuration
         self.branchtype_dict = branch_type_counter.labels_dict
         self.num_branchtypes = len(branch_type_counter)
@@ -75,7 +78,10 @@ class GfMatrixObject:
         self.num_variables = num_coalescence_events + num_events
         assert sorted(all_event_idxs) == list(
             range(num_coalescence_events, self.num_variables)
-        ), f"all event idxs should be unique and range between {num_coalescence_events} and {self.num_variables}."
+        ), (
+            "all event idxs should be unique and range between"
+            f" {num_coalescence_events} and {self.num_variables}."
+        )
 
         self.discrete_events = [event.idx for event in events if event.discrete]
         self.coalescence_events = eventslib.CoalescenceEventsSuite(
@@ -84,11 +90,12 @@ class GfMatrixObject:
 
     def make_gf(self):
         """
-        Build the generating function recursively given the specified structured coalescent
-        model and a branchtype mapping. Returns a tuple consisting of all paths and all
-        equations in matrix form. The paths are a list of list, where each list describes
-        a single path. The indices for each path point to the index of the equation in the
-        equation array.
+        Build the generating function recursively given the specified
+        structured coalescent model and a branchtype mapping. Returns
+        a tuple consisting of all paths and all equations in matrix form.
+        The paths are a list of list, where each list describes a single
+        path. The indices for each path point to the index of the equation
+        in the equation array.
 
         :return gf: paths, equations
         :rtype gf: (list(list(int)), class `np.ndarray`)
@@ -131,24 +138,25 @@ class GfMatrixObject:
                         eq_idx += 1
         return (paths, np.concatenate(eq_list, axis=0))
 
-
     def equations_graph(self):
         """
         Returns all information needed to evaluate the generating function.
-        `adjacency_list`: contains a tuple with the children of each parent i at index i.
-        `node_to_equations_map`: tuple pointing to equation in equation matrix represented by
-        each node. Note that only nodes that require an inverse Laplace transform with
-        respect to a discrete event might be associated with a tuple containing more than one
-        integer.
-        `to_invert_array` is a boolean array indicating whether the equations associated with
-        the node at each index require an inverse Lapalce transform with respect to a discrete
-        event.
-        `equation_matrix`: array containing the coefficients for the numerator and denominator
-        of the uninverted Laplace transform of the joint coalescence time distribution. This
-        is the same matrix as would have been obtained by running `make_gf()`.
+        `adjacency_list`: contains a tuple with the children of each parent
+        i at index i. `node_to_equations_map`: tuple pointing to equation
+        in equation matrix represented by each node. Note that only nodes that
+        require an inverse Laplace transform with respect to a
+        discrete event might be associated with a tuple containing more
+        than one integer. `to_invert_array` is a boolean array indicating whether
+        the equations associated with the node at each index require an inverse
+        Laplace transform with respect to a discrete event. `equation_matrix`: array
+        containing the coefficients for the numerator and denominator of the
+        uninverted Laplace transform of the joint coalescence time distribution.
+        This is the same matrix as would have been obtained by running `make_gf()`.
 
-        :return computational_graph: (`adjacency_list`, `node_to_equations_map`, `to_invert_array`, `equation_matrix`)
-        :rtype computational_graph: (list(tuple(int)), , class `np.ndarray(bool)`, class `np.ndarray(int)`)
+        :return computational_graph: (`adjacency_list`, `node_to_equations_map`,
+            `to_invert_array`, `equation_matrix`)
+        :rtype computational_graph: (list(tuple(int)), , class `np.ndarray(bool)`,
+            class `np.ndarray(int)`)
 
         """
         num_discrete_events = len(self.discrete_events)
@@ -235,7 +243,8 @@ class GfMatrixObject:
                         eq_idx += 1
 
         # eq_graph_array, eq_array, to_invert_array, eq_matrix
-        # array representation of graph, linking nodes to eqs , boolean_to_invert, matrix_with_coefficients
+        # array representation of graph, linking nodes to eqs ,
+        # boolean_to_invert, matrix_with_coefficients
         return (
             *remap_eq_arrays(eq_graph_dict, equation_dict, node_idx, inverted_node_idx),
             np.concatenate(eq_list, axis=0),

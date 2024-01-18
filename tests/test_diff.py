@@ -1,16 +1,13 @@
 import itertools
-import numpy as np
+
 import numba
+import numpy as np
 import pytest
 import sympy
-
 from scipy.special import factorial
 
 import agemo.diff as gfdiff
-import agemo.events as eventslib
-
 import agemo.legacy.inverse as linverse
-
 import tests.gfdev as gfdev
 
 
@@ -19,7 +16,7 @@ class TestDotProduct:
         rng = np.random.default_rng()
         A = rng.random(20)
         B = rng.random(20)
-        assert np, isclose(
+        assert np.isclose(
             gfdiff.casc_dot_product(A, B), gfdiff.simple_dot_product(A, B)
         )
 
@@ -163,7 +160,7 @@ class TestTaylor:
             mutype_array,
             mutype_shape_with_marg,
         )(var_array, time).reshape(mutype_shape)
-        print('result', result)
+        print("result", result)
         # from symbolic eq
         subs_dict = {b: var_array[-1] for b in symbolic_var_array[-2:]}
         T = sympy.symbols("T", positive=True, real=True)
@@ -293,6 +290,7 @@ def single_partial(ordered_mutype_list, partial):
         )
     )
 
+
 # how to substitute in sympy, how to differentiate
 def return_symbolic_result(eq, subs_dict, branchtypes, shape, root=(0, 0)):
     symbolic_diff = np.zeros(shape, dtype=np.float64)
@@ -300,7 +298,6 @@ def return_symbolic_result(eq, subs_dict, branchtypes, shape, root=(0, 0)):
         if mutype == root:
             symbolic_diff[mutype] = eq.subs(subs_dict)
         else:
-
             how_to_diff = single_partial(branchtypes, mutype)
             symbolic_diff[mutype] = (
                 1

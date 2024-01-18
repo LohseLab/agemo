@@ -80,11 +80,11 @@ class PopulationSplitEvent(Event):
 
     :param idx: Index of variable in variable and equation array.
     :type idx: int
-    :param int ancestral: Integer of population, as specified in `sample_configuration`,
-        representing the ancestral population.
+    :param int ancestral: Integer of population, as specified in
+        `sample_configuration`, representing the ancestral population.
     :type ancestral: int
-    :param derived: One or more integers representing
-        index/indices of derived populations as specified in `sample_configuration`.
+    :param derived: One or more integers representing index/indices of
+        derived populations as specified in `sample_configuration`.
     :type derived: int
 
     """
@@ -194,6 +194,7 @@ class CoalescenceEventsSuite(EventsSuite):
 def flatten(input_list):
     """
     Flattens iterable from depth n to depth n-1
+
     :param list input_list: iterable that will be flattened.
 
     """

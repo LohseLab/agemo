@@ -8,3 +8,4 @@ dependencies:
   - numpy>=1.18
   - pytest>=6.2.5
   - sympy
+  - pre-commit

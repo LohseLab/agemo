@@ -2,13 +2,11 @@ import numpy as np
 import pytest
 import sympy
 
-import agemo.gflib as gflib
-import agemo.mutations as mut
 import agemo.events as eventslib
-
-import agemo.legacy.mutations as smut
+import agemo.gflib as gflib
 import agemo.legacy.gflib as gfleg
-
+import agemo.legacy.mutations as smut
+import agemo.mutations as mut
 import tests.gfdev as gfdev
 
 
@@ -211,13 +209,13 @@ class TestPaths:
     @pytest.fixture(
         scope="class",
         params=[
-            ([(1, 2, 0)], sympy.symbols('E', real=True, positive=True), None, None),
-            (None, None, [(2, 1)], sympy.symbols('M', real=True, positive=True)),
+            ([(1, 2, 0)], sympy.symbols("E", real=True, positive=True), None, None),
+            (None, None, [(2, 1)], sympy.symbols("M", real=True, positive=True)),
             (
                 [(1, 2, 0)],
-                sympy.symbols('E', real=True, positive=True),
+                sympy.symbols("E", real=True, positive=True),
                 [(2, 1)],
-                sympy.symbols('M', real=True, positive=True),
+                sympy.symbols("M", real=True, positive=True),
             ),
         ],
         ids=["DIV", "MIG", "IM"],
@@ -226,14 +224,13 @@ class TestPaths:
         sample_list = [(), ("a", "a"), ("b", "b")]
         # ancestral_pop = 0
         coalescence_rates = (
-            sympy.symbols('c0', real=True, positive=True),
-            sympy.symbols('c1', real=True, positive=True),
-            sympy.symbols('c2', real=True, positive=True),
+            sympy.symbols("c0", real=True, positive=True),
+            sympy.symbols("c1", real=True, positive=True),
+            sympy.symbols("c2", real=True, positive=True),
         )
-        coalescence_rate_idxs = (0, 1, 2)
+        # coalescence_rate_idxs = (0, 1, 2)
         k_max = {"m_1": 2, "m_2": 2, "m_3": 2, "m_4": 2}
         mutype_labels, max_k = zip(*sorted(k_max.items()))
-        # branchtype_dict_mat = mut.make_branchtype_dict_idxs(sample_list, mapping='unrooted', labels=mutype_labels)
         branchtype_dict_mat = gfdev.make_branchtype_dict_idxs_gimble()
         branch_type_counter = mut.BranchTypeCounter(
             sample_list, branchtype_dict=branchtype_dict_mat
@@ -264,7 +261,7 @@ class TestPaths:
             event_list.append(
                 eventslib.PopulationSplitEvent(exodus_rate_idx, ancestral, *derived)
             )
-        m = sympy.symbols('m', real=True, positive=True)
+        m = sympy.symbols("m", real=True, positive=True)
         variables_array += [m for _ in mutype_labels]
         variables_array = np.array(variables_array, dtype=object)
 
@@ -283,6 +280,7 @@ class TestPaths:
         gf_original = sum(gfobj2.make_gf())
 
         return (variables_array, gf_mat, gf_original)
+
 
 @pytest.mark.diff
 @pytest.mark.collapse
