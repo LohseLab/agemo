@@ -1,5 +1,5 @@
-import numpy as np
 import numba
+import numpy as np
 
 import agemo.diff as gfdiff
 import agemo.mutations as gfmuts
@@ -9,11 +9,14 @@ import agemo.mutations as gfmuts
 
 class BSFSEvaluator:
     """
-    Class containing all methods needed to extract the block-wise site frequency spectrum from the generating function.
+    Class containing all methods needed to extract the block-wise site
+    frequency spectrum from the generating function.
 
-    :param gf: object defining the structured coalescent model for which the bSFS will be calculated.
+    :param gf: object defining the structured coalescent model for which
+        the bSFS will be calculated.
     :type gf: class `agemo.GfMatrixObject`
-    :param mutation_types: MutationTypeCounter object containing all information on the mutation types to be included in the bSFS,
+    :param mutation_types: MutationTypeCounter object containing all
+        information on the mutation types to be included in the bSFS.
     :type mutation_types: class `MutationTypeCounter`
 
     """
@@ -21,7 +24,8 @@ class BSFSEvaluator:
     def __init__(self, gfObj, MutationTypeCounter, seed=None):
         if MutationTypeCounter.phased:
             raise NotImplementedError(
-                "Calculating the bSFS for the fully phased case is still under development."
+                """Calculating the bSFS for the fully phased case is
+                 still under development."""
             )
         num_discrete_events = len(gfObj.discrete_events)
         if num_discrete_events == 0:
@@ -50,7 +54,8 @@ class BSFSEvaluator:
         self.subsetdict = self.make_product_subsetdict(MutationTypeCounter)
         self.all_mutypes_ravel = MutationTypeCounter.all_mutypes_ravel
         # final step:
-        # eventually also: mapping mutypes with same probability (part of MutationTypeCounter obj)
+        # eventually also: mapping mutypes with same probability
+        # (part of MutationTypeCounter obj)
 
         f_tuple = gfdiff.prepare_graph_evaluation_with_marginals(
             eq_matrix,
@@ -82,15 +87,18 @@ class BSFSEvaluator:
 
         :param theta: Scaled mutation rate (units 2Ne).
         :type theta: float
-        :param var: array of floats containing the parameter values for ,
-            First n entries are the coalescence rates for the populations as provided to the MutationTypeCounter.
-            Order of the next elements determined by the respective indices of each of the events.
+        :param var: array of floats containing the parameter values for the
+            first n entries are the coalescence rates for the populations
+            as provided to the MutationTypeCounter. Order of the next elements
+            determined by the respective indices of each of the events.
             Last m entries should equal theta. With m the number of branch types.
         :type var: class `np.ndarray(float)`
-        :param time: Time to the discrete event. Only relevant in the presence of a discrete event.
+        :param time: Time to the discrete event. Only relevant in the presence
+            of a discrete event.
         :type time: float
 
-        :return bSFS: Shape is defined by k_{max} as defined by MutationTypeCounter for each branch type.
+        :return bSFS: Shape is defined by k_{max} as defined
+            by MutationTypeCounter for each branch type.
         :rtype bSFS: class `np.ndarray(float)`
 
         """
@@ -119,9 +127,9 @@ class BSFSEvaluator:
 
     def adjust_parameters(self, var, factor=1e-5):
         """
-        Adjusts the var array in case we run into a zero-division error and multiplies each entry
+        Adjusts the var array in case we run into a zero-division
+        error and multiplies each entry
         by a small factor epsilon.
-
         :param var: Array containing variables values.
         :type var: class `np.ndarray(float)`
         :param factor: multiplying factor used to determine epsilon.
@@ -141,7 +149,8 @@ class BSFSEvaluator:
 
     def make_product_subsetdict(self, MutationTypeCounter):
         """
-        Method returns dict containing the indices needed to calculate the product of two polynomials.
+        Method returns dict containing the indices needed to calculate
+        the product of two polynomials.
 
         """
         product_subsetdict_with_gaps = gfdiff.product_subsetdict_marg(

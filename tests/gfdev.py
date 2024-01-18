@@ -1,5 +1,6 @@
 import collections
 import itertools
+
 import mpmath
 import numpy as np
 import sympy
@@ -7,6 +8,7 @@ import sympy
 import agemo.gflib as gflib
 import agemo.inverse as gfinverse
 import agemo.legacy.inverse as linverse
+
 
 @mpmath.workdps(100)
 def get_parameter_dict(coalescence_rates, global_info, sim_config, gf_vars):
@@ -20,7 +22,7 @@ def get_parameter_dict(coalescence_rates, global_info, sim_config, gf_vars):
             2 * sim_config[migration_string] * sim_config[f"Ne_{reference_pop}"]
         )
     if gf_vars.get("exodus_rate"):
-        parameter_dict[sympy.symbols('T', real=True, positive=True)] = mpmath.mpf(
+        parameter_dict[sympy.symbols("T", real=True, positive=True)] = mpmath.mpf(
             sim_config["T"] / (2 * sim_config[f"Ne_{reference_pop}"])
         )
     for c, Ne in zip(coalescence_rates, ("Ne_A_B", "Ne_A", "Ne_B")):
@@ -31,6 +33,7 @@ def get_parameter_dict(coalescence_rates, global_info, sim_config, gf_vars):
         else:
             parameter_dict[c] = 0.0
     return parameter_dict
+
 
 @mpmath.workdps(100)
 def get_theta(global_info, sim_config, **kwargs):
@@ -95,10 +98,8 @@ def equations_with_sympy(multiplier_array, paths, var_array, time, delta=None):
     for i, path in enumerate(paths):
         ma = multiplier_array[np.array(path, dtype=int)]
         temp = np.prod(equations_from_matrix(ma, var_array))
-        T = sympy.symbols('T', real=True, positive=True)
-        eqs[i] = linverse.return_inverse_laplace_sympy(temp, delta, T).subs(
-            {T: time}
-        )
+        T = sympy.symbols("T", real=True, positive=True)
+        eqs[i] = linverse.return_inverse_laplace_sympy(temp, delta, T).subs({T: time})
     return eqs
 
 
@@ -129,47 +130,45 @@ def eq_dict_to_adjacency_matrix_collapsed_graph(equation_dict, max_idx):
 
 
 def make_graph(gfobj):
-        stack = [
-            (0, gfobj.sample_list),
-        ]
-        eq_list = list()
-        eq_idx = 0
-        node_idx = 1
-        graph_dict = collections.defaultdict(list)
-        equation_dict = dict()  # key=(parent, child), value=eq_idx
-        nodes_visited = set()  # set of all nodes visisted
-        str_to_numeric_node_dict = {gflib.sample_to_str(gfobj.sample_list): 0}
+    stack = [
+        (0, gfobj.sample_list),
+    ]
+    eq_list = list()
+    eq_idx = 0
+    node_idx = 1
+    graph_dict = collections.defaultdict(list)
+    equation_dict = dict()  # key=(parent, child), value=eq_idx
+    nodes_visited = set()  # set of all nodes visisted
+    str_to_numeric_node_dict = {gflib.sample_to_str(gfobj.sample_list): 0}
 
-        while stack:
-            parent_node_numeric, state = stack.pop()
-            parent_node = gflib.sample_to_str(state)
-            if sum(len(pop) for pop in state) > 1:
-                if parent_node not in nodes_visited:
-                    nodes_visited.add(parent_node)
-                    multiplier_array, new_state_list = gfobj.gf_single_step(state)
-                    eq_list.append(multiplier_array)
-                    for eq, new_state in zip(multiplier_array, new_state_list):
-                        child_node = gflib.sample_to_str(new_state)
-                        if child_node in str_to_numeric_node_dict:
-                            child_node_numeric = str_to_numeric_node_dict[child_node]
-                        else:
-                            child_node_numeric = node_idx
-                            str_to_numeric_node_dict[child_node] = child_node_numeric
-                            node_idx += 1
-                        graph_dict[parent_node_numeric].append(child_node_numeric)
-                        equation_dict[
-                            (parent_node_numeric, child_node_numeric)
-                        ] = eq_idx
-                        stack.append((child_node_numeric, new_state))
-                        eq_idx += 1
+    while stack:
+        parent_node_numeric, state = stack.pop()
+        parent_node = gflib.sample_to_str(state)
+        if sum(len(pop) for pop in state) > 1:
+            if parent_node not in nodes_visited:
+                nodes_visited.add(parent_node)
+                multiplier_array, new_state_list = gfobj.gf_single_step(state)
+                eq_list.append(multiplier_array)
+                for _, new_state in zip(multiplier_array, new_state_list):
+                    child_node = gflib.sample_to_str(new_state)
+                    if child_node in str_to_numeric_node_dict:
+                        child_node_numeric = str_to_numeric_node_dict[child_node]
+                    else:
+                        child_node_numeric = node_idx
+                        str_to_numeric_node_dict[child_node] = child_node_numeric
+                        node_idx += 1
+                    graph_dict[parent_node_numeric].append(child_node_numeric)
+                    equation_dict[(parent_node_numeric, child_node_numeric)] = eq_idx
+                    stack.append((child_node_numeric, new_state))
+                    eq_idx += 1
 
-        graph_array = [
-            tuple(graph_dict[i]) if i in graph_dict else tuple()
-            for i in range(node_idx)
-        ]
-        adjacency_matrix = eq_dict_to_adjacency_matrix(equation_dict, node_idx, eq_idx)
+    graph_array = [
+        tuple(graph_dict[i]) if i in graph_dict else tuple() for i in range(node_idx)
+    ]
+    adjacency_matrix = eq_dict_to_adjacency_matrix(equation_dict, node_idx, eq_idx)
 
-        return (graph_array, adjacency_matrix, np.concatenate(eq_list, axis=0))
+    return (graph_array, adjacency_matrix, np.concatenate(eq_list, axis=0))
+
 
 def collapse_graph(gfobj, graph_array, adjacency_matrix, eq_matrix):
     num_discrete_events = len(gfobj.discrete_events)
@@ -239,9 +238,7 @@ def collapse_graph(gfobj, graph_array, adjacency_matrix, eq_matrix):
             adjacency_matrix,
             eq_array,
             to_invert_array,
-        ) = eq_dict_to_adjacency_matrix_collapsed_graph(
-            equations_dict, new_node_idx
-        )
+        ) = eq_dict_to_adjacency_matrix_collapsed_graph(equations_dict, new_node_idx)
     return (
         collapsed_graph_array,
         adjacency_matrix,

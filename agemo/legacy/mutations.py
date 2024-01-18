@@ -1,4 +1,5 @@
 import itertools
+
 import mpmath
 import numpy as np
 import sympy
@@ -64,6 +65,7 @@ def generate_equation(equation, parent, node, max_k, ordered_mutype_list, margin
         diff = equation.diff(partial)
         return diff
 
+
 @mpmath.workdps(100)
 def eval_equation(derivative, theta, ratedict, numeric_mucounts):
     mucount_total = np.sum(numeric_mucounts)
@@ -77,9 +79,7 @@ def eval_equation(derivative, theta, ratedict, numeric_mucounts):
 
 
 # alternative make_result using depth first
-def depth_first_mutypes(
-    max_k, labels, eq, theta, rate_dict, exclude=None
-):
+def depth_first_mutypes(max_k, labels, eq, theta, rate_dict, exclude=None):
     # factorials = np.cumprod(np.arange(1, np.max(max_k)+1))
     # factorials = np.hstack((1,factorials))
     k = len(max_k) - 1
@@ -166,7 +166,7 @@ def make_branchtype_dict(sample_list, mapping="unrooted", labels=None):
             }
         else:
             branchtype_dict = {
-                branchtype: sympt.symbols(f"z_{branchtype}", positive=True, real=True)
+                branchtype: sympy.symbols(f"z_{branchtype}", positive=True, real=True)
                 for branchtype in branches
             }
     elif mapping == "unrooted":  # this needs to be extended to the general thing!
@@ -178,11 +178,17 @@ def make_branchtype_dict(sample_list, mapping="unrooted", labels=None):
             if len(branchtype) == 0 or len(branchtype) == len(all_branchtypes):
                 pass
             elif branchtype in ("abb", "a"):
-                branchtype_dict[branchtype] = sympy.symbols(labels[1], positive=True, real=True)  # hetA
+                branchtype_dict[branchtype] = sympy.symbols(
+                    labels[1], positive=True, real=True
+                )  # hetA
             elif branchtype in ("aab", "b"):
-                branchtype_dict[branchtype] = sympy.symbols(labels[0], positive=True, real=True)  # hetB
+                branchtype_dict[branchtype] = sympy.symbols(
+                    labels[0], positive=True, real=True
+                )  # hetB
             elif branchtype == "ab":
-                branchtype_dict[branchtype] = sympy.symbols(labels[2], positive=True, real=True)  # hetAB
+                branchtype_dict[branchtype] = sympy.symbols(
+                    labels[2], positive=True, real=True
+                )  # hetAB
             else:
                 branchtype_dict[branchtype] = sympy.symbols(
                     labels[3], positive=True, real=True
@@ -191,16 +197,19 @@ def make_branchtype_dict(sample_list, mapping="unrooted", labels=None):
         ValueError("This branchtype mapping has not been implemented yet.")
     return branchtype_dict
 
+
 # dealing with marginals
 def list_marginal_idxs(marginal, max_k):
     marginal_idxs = np.argwhere(marginal > max_k).reshape(-1)
     shape = np.array(max_k, dtype=np.uint8) + 2
-    max_k_zeros = np.zeros(shape, dtype=np.uint8)    
-    #for idx, v in enumerate(marginal[:]):
-    slicing = tuple([
-        v if idx not in marginal_idxs else slice(-1)
-        for idx, v in enumerate(marginal[:])
-    ])
+    max_k_zeros = np.zeros(shape, dtype=np.uint8)
+    # for idx, v in enumerate(marginal[:]):
+    slicing = tuple(
+        [
+            v if idx not in marginal_idxs else slice(-1)
+            for idx, v in enumerate(marginal[:])
+        ]
+    )
     max_k_zeros[slicing] = 1
     return [tuple(idx) for idx in np.argwhere(max_k_zeros)]
 

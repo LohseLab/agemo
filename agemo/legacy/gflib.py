@@ -1,8 +1,8 @@
 import collections
 import itertools
+
 import numpy as np
 
-import agemo.events as eventslib
 import agemo.gflib as gflib
 
 
@@ -75,9 +75,10 @@ class GfObject:
     ):
         assert len(sample_list) == len(coalescence_rates)
         if sum(1 for pop in sample_list if len(pop) > 0) > 1:
-            assert (
-                migration_direction or exodus_direction
-            ), "lineages from different populations cannot coalesce without migration or exodus event."
+            assert migration_direction or exodus_direction, (
+                "lineages from different populations cannot coalesce"
+                " without migration or exodus event."
+            )
         self.sample_list = tuple(tuple(sorted(pop)) for pop in sample_list)
         self.branchtype_dict = branchtype_dict
 
@@ -188,7 +189,6 @@ class GfObject:
             ]
 
     def make_gf(self):
-
         stack = [(1, self.sample_list)]
         # result = []
         while stack:

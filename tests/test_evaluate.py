@@ -1,19 +1,16 @@
-import itertools
 import numpy as np
-import numba
 import pytest
 import scipy.stats as stats
 import sympy
 
-import agemo.gflib as gflib
 import agemo.diff as gfdiff
-import agemo.mutations as gfmuts
 import agemo.evaluate as gfeval
 import agemo.events as eventslib
-
+import agemo.gflib as gflib
 import agemo.legacy.mutations as smuts
-
+import agemo.mutations as gfmuts
 import tests.gfdev as gfdev
+
 
 @pytest.mark.diff
 @pytest.mark.taylor_single
@@ -39,15 +36,18 @@ class TestTaylorSinglePop:
             gfEvalObj, theta, variable_array, time
         )
         result_with_marginals = result_with_marginals.reshape(shape)
-        print('obs', result_with_marginals)
-        
+        print("obs", result_with_marginals)
+
         # symbolic derivation
-        ordered_mutype_list = [sympy.symbols(f"m_{idx}", positive=True, real=True) for idx in range(1, size)]
+        ordered_mutype_list = [
+            sympy.symbols(f"m_{idx}", positive=True, real=True)
+            for idx in range(1, size)
+        ]
         # num_mutypes = len(ordered_mutype_list)
         symbolic_variable_array = np.hstack(
             (variable_array[:2], np.array(ordered_mutype_list))
         )
-        print('discrete', gfobj.discrete_events[0])
+        print("discrete", gfobj.discrete_events[0])
         exp_result = evaluate_symbolic_equation(
             gfobj,
             ordered_mutype_list,
@@ -56,9 +56,9 @@ class TestTaylorSinglePop:
             symbolic_variable_array,
             time,
             gfobj.discrete_events[0],
-            sage_inverse=True
+            sage_inverse=True,
         )
-        print('exp_result', exp_result)
+        print("exp_result", exp_result)
         assert np.allclose(exp_result, result_with_marginals)
 
     def get_BT_object(self, sample_list):
@@ -185,7 +185,7 @@ class TestEpsilon:
 
     def test_IM_to_DIV_simplfication(self, get_IM_gfobject, get_MT_object):
         gfobj, _, model, BranchTypeCounter = get_IM_gfobject
-        max_k = np.array([2, 2, 2, 2], dtype=int)
+        # max_k = np.array([2, 2, 2, 2], dtype=int)
         # shape = tuple(max_k + 2)
         # variables depending on model: c0, c1, c2, M, E
 
@@ -252,7 +252,11 @@ def evaluate_symbolic_equation(
             eq_matrix, paths, var, time, delta_idx
         )
     else:
-        delta = sympy.symbols('d', positive=True, real=True) if delta_idx is not None else None
+        delta = (
+            sympy.symbols("d", positive=True, real=True)
+            if delta_idx is not None
+            else None
+        )
         var_array = np.insert(var, delta_idx, delta)
         alt_eqs = gfdev.equations_with_sympy(
             eq_matrix, paths, var_array, sympy.Rational(time), delta
@@ -278,7 +282,7 @@ def get_IM_gfobject_BT(params, btc):
     ) = params
 
     events_list = []
-    migration_rate_idx, exodus_rate_idx = None, None
+    # migration_rate_idx, exodus_rate_idx = None, None
     if migration_rate is not None:
         mige = eventslib.MigrationEvent(num_variables, *migration_direction)
         num_variables += 1
@@ -300,9 +304,10 @@ def chisquare(observed, expected, p_th=0.05, recombination=False, all_sims=False
     obs = np.reshape(observed, -1)
     exp = np.reshape(expected, -1)
     if not (recombination or all_sims):
-        assert np.all(
-            obs[exp == 0] == 0
-        ), "chisquare error: at least one cell with expected frequency 0 has observed values"
+        assert np.all(obs[exp == 0] == 0), (
+            "chisquare error: at least one cell with"
+            "expected frequency 0 has observed values"
+        )
     # bin all values with counts smaller than 5
     binning_idxs = np.digitize(exp, np.array([5]), right=True)
     # exp_smaller = np.sum(exp[binning_idxs == 0])
@@ -313,7 +318,7 @@ def chisquare(observed, expected, p_th=0.05, recombination=False, all_sims=False
     exp_binned *= np.sum(obs_binned) / np.sum(exp_binned)
     not_zeros = exp_binned > 0
     if sum(not_zeros) < 1:
-        assert False  # expected probabilities are all 0
+        raise AssertionError("expected probabilities are all 0")
     else:
         chisq = stats.chisquare(obs_binned[not_zeros], exp_binned[not_zeros])
         print("chisquare value:", chisq)

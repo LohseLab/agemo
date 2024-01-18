@@ -1,10 +1,13 @@
 import itertools
-import numba
-import numpy as np
 import math
 
+import numba
+import numpy as np
+
+
 # numerical compensation algorithms
-# algorithm from Ogita et al. 2005. Accurate sum and dot product. Journal of Scientific Computing
+# algorithm from Ogita et al. 2005.
+# Accurate sum and dot product. Journal of Scientific Computing
 @numba.njit(
     numba.types.UniTuple(numba.float64, 2)(numba.float64, numba.float64), cache=True
 )
@@ -34,6 +37,7 @@ def casc_sum(arr):
         numba.float64(numba.int16[:], numba.float64[:]),
         numba.float64(numba.int32[:], numba.float64[:]),
         numba.float64(numba.int64[:], numba.float64[:]),
+        numba.float64(numba.float64[:], numba.float64[:]),
     ],
     cache=True,
 )
@@ -56,6 +60,7 @@ def casc_dot_product(A, B):
         numba.float64(numba.int16[:], numba.float64[:], numba.int64),
         numba.float64(numba.int32[:], numba.float64[:], numba.int64),
         numba.float64(numba.int64[:], numba.float64[:], numba.int64),
+        numba.float64(numba.float64[:], numba.float64[:], numba.int64),
     ],
     cache=True,
 )
@@ -78,6 +83,7 @@ def simple_dot_product_setback(A, B, setback):
         numba.float64(numba.int16[:], numba.float64[:]),
         numba.float64(numba.int32[:], numba.float64[:]),
         numba.float64(numba.int64[:], numba.float64[:]),
+        numba.float64(numba.float64[:], numba.float64[:]),
     ],
     cache=True,
 )
@@ -90,7 +96,8 @@ def taylor_coeff_inverse_polynomial(
     denom, theta, diff_array, num_branchtypes, dot_product, mutypes_shape
 ):
     # of the form c/f(var_array)
-    # diff_array = np.array(diff_array, dtype=np.uint8) # where marg should already be 0!!
+    # diff_array = np.array(diff_array, dtype=np.uint8)
+    # where marg should already be 0!!
     total_diff_count, fact_diff, nomd = 0, 1, 1
     for idx in range(num_branchtypes, 0, -1):
         diff_value = diff_array[-idx] % (mutypes_shape[-idx] - 1)
@@ -226,12 +233,6 @@ def product_subsetdict_marg(shape, all_mutypes):
 
 
 # deconstructing equations:
-@numba.njit(cache=True)
-def quotient_f_g(subsetdict, f, g):
-    result = np.zeros_like(f)
-    for idx, (fs, gs) in enumerate(zip(f, g)):
-        result[idx] = series_quotient_legacy(fs, gs, subsetdict)
-    return result
 
 
 @numba.njit(cache=True)
@@ -559,7 +560,7 @@ def sort_util(n, visited, stack, graph):
 def resolve_dependencies(graph):
     visited = np.zeros(len(graph) + 1, dtype=int)
     stack = []
-    for idx, node in enumerate(graph):
+    for idx, _ in enumerate(graph):
         if visited[idx] == 0:
             sort_util(idx, visited, stack, graph)
     return np.array(stack, dtype=int)

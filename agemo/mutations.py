@@ -1,12 +1,12 @@
-import itertools
 import collections
 import copy
+import itertools
 import math
-import numpy as np
+
 import numba
+import numpy as np
 
 import agemo.gflib as gflib
-import agemo.diff as gfdiff
 
 
 def return_mutype_configs(max_k, include_marginals=True):
@@ -277,21 +277,26 @@ class TypeCounter:
 
 class BranchTypeCounter(TypeCounter):
     """
-    Collects all information on the branch types possible given the `sample_configuration`.
+    Collects all information on the branch types possible given
+    the `sample_configuration`.
 
-    :param sample_configuration: Should contain a list or tuple for each of the populations involved in the
-        coalescent history of the sample, even those that do not contain any lineages at the time of sampling.
-        Example: `[(), ("a", "a"), ("b", "b")]`.
+    :param sample_configuration: Should contain a list or tuple for
+        each of the populations involved in the coalescent history of the
+        sample, even those that do not contain any lineages at the time of
+        sampling. Example: `[(), ("a", "a"), ("b", "b")]`.
     :type sample_configuration: list(list(str))
-    :param phased: Indicates whether we can distinguish samples within the same population, defaults to False.
-        When False, all samples within the same population get the same identifier. Ideally,
-        the `sample_configuration` as provided would already be simplified accordingly.
+    :param phased: Indicates whether we can distinguish samples within
+        the same population, defaults to False. When False, all samples
+        within the same population get the same identifier. Ideally, the
+        `sample_configuration` as provided would already be simplified
+        accordingly.
     :type phased: bool
-    :param rooted: Indicates whether branch types should be rooted, defaults to False
+    :param rooted: Indicates whether branch types should be rooted,
+        defaults to False
     :type rooted: bool
-    :param branchtype_dict: Mapping of all branchtypes to an integer index. Changes the order
-        of the coefficients within the equation matrix for each of the branch types,
-        defaults to `None`
+    :param branchtype_dict: Mapping of all branchtypes to an integer index.
+        Changes the order of the coefficients within the equation matrix
+        for each of the branch types, defaults to `None`
     :type branchtype_dict: dict
 
     """
@@ -304,7 +309,7 @@ class BranchTypeCounter(TypeCounter):
         branchtype_dict=None,
     ):
         self._sample_configuration = sample_configuration
-        self._samples_per_pop = tuple((len(pop) for pop in sample_configuration))
+        self._samples_per_pop = tuple(len(pop) for pop in sample_configuration)
         self._labels, self._labels_dict = self._set_labels(phased, rooted)
         self._binary_representation = get_binary_branchtype_array_all(
             self._samples_per_pop, phased, rooted
@@ -336,7 +341,8 @@ class BranchTypeCounter(TypeCounter):
         custom_keys_set = set(branchtype_dict.keys())
         assert (
             keys_set == custom_keys_set
-        ), f'branchtype dict needs to contain all following keys: {", ".join(self.labels)}'
+        ), f'branchtype dict needs to contain all following keys:" \
+        " {", ".join(self.labels)}'
         custom_values_set = set(branchtype_dict.values())
         max_value = max(custom_values_set)
         assert max_value == len(custom_values_set) - 1
@@ -371,11 +377,7 @@ class BranchTypeCounter(TypeCounter):
             all_branchtypes = list(
                 flatten(
                     [
-                        sorted(
-                            set(
-                                ["".join(p) for p in itertools.combinations(samples, i)]
-                            )
-                        )
+                        sorted({"".join(p) for p in itertools.combinations(samples, i)})
                         for i in range(1, len(samples))
                     ]
                 )
@@ -398,14 +400,16 @@ class BranchTypeCounter(TypeCounter):
 
 class MutationTypeCounter(TypeCounter):
     """
-    Collects all the information on all possible mutation types given a set of branch types.
+    Collects all the information on all possible mutation types given a set
+    of branch types.
 
     :param branch_types: All branchtypes for a given sample set.
     :type branch_types: class `agemo.BranchTypeCounter`
-    :param mutype_shape: Tuple of integers of length equal to the number of different branch types.
-        Provides the shape for the bSFS. In that case, the shape equates to :math:`k_{max} + 2`. Here
-        :math:`k_{max}` indicates the maximum number of mutations along each of the branch types for which
-        we want to calculate the likelihood.
+    :param mutype_shape: Tuple of integers of length equal to the number of different
+        branch types. Provides the shape for the bSFS. In that case, the shape equates
+        to :math:`k_{max} + 2`. Here :math:`k_{max}` indicates the maximum number of
+        mutations along each of the branch types for which we want to calculate
+        the likelihood.
     :type mutype_shape: tuple(int)
 
     """

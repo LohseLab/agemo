@@ -1,13 +1,13 @@
-import numpy as np
 import sys
-import sympy
-import mpmath
-import agemo.gflib as gflib
-import agemo.mutations as mutations
 
+import mpmath
+import numpy as np
+import sympy
+
+import agemo.mutations as mutations
 from . import gflib as gfleg
-from . import mutations as smut
 from . import inverse
+from . import mutations as smut
 
 
 # old path to gimble
@@ -72,7 +72,9 @@ class GfEvaluator:
         self.gf = gf
         self.max_k = np.array(max_k)
         self.ETPs_shape = tuple(k + 2 for k in max_k)
-        self.ordered_mutype_list = [sympy.symbols(mutype, real=True, positive=True) for mutype in mutypes]
+        self.ordered_mutype_list = [
+            sympy.symbols(mutype, real=True, positive=True) for mutype in mutypes
+        ]
         if restrict_to is not None:
             self.restricted = True
             all_mutation_configurations = smut.add_marginals_restrict_to(
@@ -131,7 +133,8 @@ class GfEvaluator:
             assert np.all(np.logical_and(ETPs >= 0, ETPs <= 1))
         except AssertionError:
             print(
-                "[-] Some ETPs are not in [0,1]. Increase machine precision in the ini file."
+                "[-] Some ETPs are not in [0,1]. Increase machine precision"
+                " in the ini file."
             )
         ETPs = mutations.adjust_marginals_array(ETPs, len(self.max_k))
         if not np.all(ETPs > 0):
