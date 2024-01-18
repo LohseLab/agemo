@@ -1,5 +1,5 @@
-numpy>=1.17
 numba>=0.54.0
+numpy>=1.18
 pytest>=6.2.5
 scipy
 sympy

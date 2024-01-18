@@ -4,7 +4,7 @@ channels:
   - conda-forge
 dependencies:
   - python>=3.8
-  - numpy>=1.17
   - numba>=0.54.0
+  - numpy>=1.18
   - pytest>=6.2.5
   - sympy
