@@ -9,3 +9,6 @@ parts:
 - caption: Interface
   chapters:
   - file: api
+- caption: Development
+  chapters:
+  - file: development
