@@ -14,7 +14,7 @@ In the example the first tuple represents the ancestral population not containin
 
 ## events
 
-Secondly, a list containing all events relevant for the sample history should be compiled. See {class}`.Event`. Note that each event should be associated with a unique index ranging between the number of populations and (the number of populations $+$ the number of events). See {ref}`sec_array_indexing` on the why and how of using these indices.
+Secondly, a list containing all events relevant for the sample history should be compiled. See {ref}`sec_api_events`. Note that each event should be associated with a unique index ranging between the number of populations and (the number of populations $+$ the number of events). See {ref}`sec_array_indexing` on the why and how of using these indices.
 
 Currently, the available models are limited to structured coalescent models with uni-directional migration and/or population splits.
 

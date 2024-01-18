@@ -21,6 +21,8 @@
     :special-members: __len__
 ```
 
+(sec_api_events)=
+
 ### Events
 
 ```{eval-rst}
